@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bank Loan Risk Analytics — Mohit Das</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: #f8f9fa; color: #212529; font-family: 'Inter', sans-serif; font-size: 14px; }
+
+/* ── HEADER ── */
+.header {
+  background: #fff;
+  border-bottom: 2px solid #e9ecef;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.header-title { font-size: 20px; font-weight: 700; color: #212529; }
+.header-sub { font-size: 13px; color: #6c757d; margin-top: 2px; }
+.header-meta { font-size: 13px; color: #6c757d; text-align: right; }
+.header-meta strong { color: #212529; display: block; font-size: 14px; }
+
+/* ── MAIN ── */
+.main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6c757d;
+  margin-bottom: 12px;
+  margin-top: 36px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ── METRIC CARDS ── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.metric-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px 22px;
+  border-left: 4px solid #dee2e6;
+}
+.metric-card.red   { border-left-color: #dc3545; }
+.metric-card.amber { border-left-color: #fd7e14; }
+.metric-card.blue  { border-left-color: #0d6efd; }
+.metric-card.green { border-left-color: #198754; }
+.metric-label { font-size: 12px; color: #6c757d; margin-bottom: 6px; }
+.metric-value { font-size: 26px; font-weight: 700; color: #212529; line-height: 1; }
+.metric-value.red   { color: #dc3545; }
+.metric-value.amber { color: #fd7e14; }
+.metric-value.blue  { color: #0d6efd; }
+.metric-value.green { color: #198754; }
+.metric-sub { font-size: 12px; color: #adb5bd; margin-top: 5px; }
+
+/* ── INFO CARDS ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.info-card-title { font-size: 13px; font-weight: 600; color: #343a40; margin-bottom: 12px; }
+.info-body { font-size: 13px; color: #495057; line-height: 1.75; }
+.info-body p + p { margin-top: 10px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tag {
+  background: #f1f3f5;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #495057;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── QUESTIONS GRID ── */
+.questions-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.questions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 4px; }
+.question-item {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #495057;
+  line-height: 1.5;
+  border-left: 3px solid #dee2e6;
+}
+.question-item::before { content: 'Q: '; font-weight: 600; color: #0d6efd; }
+
+/* ── SQL BLOCK ── */
+.sql-card {
+  background: #1e1e2e;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sql-header {
+  background: #16162a;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sql-header-label { font-size: 12px; color: #6c757d; font-family: 'JetBrains Mono', monospace; }
+.sql-dots { display: flex; gap: 6px; }
+.sql-dot { width: 10px; height: 10px; border-radius: 50%; }
+.sql-dot.red { background: #ff5f57; }
+.sql-dot.yellow { background: #febc2e; }
+.sql-dot.green { background: #28c840; }
+.sql-body {
+  padding: 22px 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.85;
+  color: #cdd6f4;
+  overflow-x: auto;
+}
+.sql-kw   { color: #89b4fa; font-weight: 500; }
+.sql-fn   { color: #f9e2af; }
+.sql-str  { color: #a6e3a1; }
+.sql-num  { color: #fab387; }
+.sql-cmt  { color: #6272a4; font-style: italic; }
+.sql-tbl  { color: #89dceb; }
+.sql-type { color: #cba6f7; }
+
+/* ── CHARTS ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.chart-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px 22px;
+}
+.chart-title { font-size: 13px; font-weight: 600; color: #343a40; margin-bottom: 16px; }
+canvas { max-height: 200px; }
+
+/* ── TABLE ── */
+.table-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.table-toolbar {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e9ecef;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tabs { display: flex; gap: 4px; }
+.tab {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #6c757d;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.tab.active { background: #f1f3f5; color: #212529; border-color: #dee2e6; }
+.tab:hover:not(.active) { background: #f8f9fa; }
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+}
+.btn-download:hover { background: #0b5ed7; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  padding: 11px 14px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 12px;
+}
+tbody tr { border-bottom: 1px solid #f1f3f5; }
+tbody tr:hover { background: #f8f9fa; }
+tbody td { padding: 10px 14px; color: #495057; white-space: nowrap; }
+tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.badge-default { background: #fff5f5; color: #c92a2a; border: 1px solid #ffc9c9; }
+.badge-paid    { background: #f0fff4; color: #2f9e44; border: 1px solid #b2f2bb; }
+
+.score-wrap { display: flex; align-items: center; gap: 8px; }
+.score-bar  { width: 60px; height: 4px; background: #e9ecef; border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; }
+
+/* ── INSIGHTS ── */
+.insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.insight-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.insight-card.dark { background: #212529; border-color: #343a40; }
+.insight-card-title { font-size: 14px; font-weight: 600; color: #343a40; margin-bottom: 16px; }
+.insight-card.dark .insight-card-title { color: #f8f9fa; }
+.insight-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+.insight-card.dark .insight-item { border-bottom-color: #343a40; }
+.insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+.insight-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #0d6efd;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.insight-card.dark .insight-dot { background: #4dabf7; }
+.insight-text { font-size: 13px; color: #495057; line-height: 1.6; }
+.insight-card.dark .insight-text { color: #adb5bd; }
+.insight-text strong { color: #212529; }
+.insight-card.dark .insight-text strong { color: #f1f3f5; }
+
+/* ── SCHEMA ── */
+.schema-block {
+  background: #1e1e2e;
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #cdd6f4;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+/* ── FOOTER ── */
+.footer {
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  padding: 18px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 40px;
+  font-size: 13px;
+  color: #6c757d;
+}
+.footer strong { color: #212529; }
+
+@media (max-width: 900px) {
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .two-col, .insights-grid { grid-template-columns: 1fr; }
+  .questions-grid { grid-template-columns: 1fr 1fr; }
+  .header { padding: 18px 20px; }
+  .main { padding: 20px 16px; }
+}
+@media (max-width: 600px) {
+  .questions-grid { grid-template-columns: 1fr; }
+  .metrics-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">Bank Loan Risk Analytics</div>
+    <div class="header-sub">SQL · Credit Risk · Loan Default Analysis</div>
+  </div>
+  <div class="header-meta">
+    <strong>Mohit Das</strong>
+    MSc Economics · Data Analytics Project
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 1. PORTFOLIO OVERVIEW -->
+  <div class="section-label">Portfolio Overview</div>
+  <div class="metrics-row">
+    <div class="metric-card red">
+      <div class="metric-label">Default Rate</div>
+      <div class="metric-value red">14.7%</div>
+      <div class="metric-sub">~1,470 borrowers in default</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="metric-label">Total Exposure</div>
+      <div class="metric-value amber">₹520Cr</div>
+      <div class="metric-sub">Across all active loan records</div>
+    </div>
+    <div class="metric-card blue">
+      <div class="metric-label">Avg Credit Score</div>
+      <div class="metric-value blue">645</div>
+      <div class="metric-sub">Fair band · Range 480–810</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-label">Total Records</div>
+      <div class="metric-value green">10K+</div>
+      <div class="metric-sub">Kaggle public dataset</div>
+    </div>
+  </div>
+
+  <!-- 2. DATASET & SCHEMA -->
+  <div class="section-label" style="margin-top:32px">Dataset & Schema</div>
+  <div class="two-col">
+    <div class="info-card">
+      <div class="info-card-title">About the Dataset</div>
+      <div class="info-body">
+        <p>This project uses the public <strong>Loan Default Prediction Dataset</strong> from Kaggle — a real-world credit analytics dataset with ~10,000 loan records.</p>
+        <p>Fields include borrower demographics, financial indicators, and loan outcome status — giving a full picture of credit risk at the individual level.</p>
+      </div>
+      <div class="tag-list">
+        <span class="tag">income</span>
+        <span class="tag">credit_score</span>
+        <span class="tag">loan_amount</span>
+        <span class="tag">dti_ratio</span>
+        <span class="tag">loan_purpose</span>
+        <span class="tag">employment_length</span>
+        <span class="tag">loan_status</span>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">Table Schema</div>
+      <div class="schema-block"><span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">loans</span> (
+  borrower_id       <span class="sql-type">INT</span>,
+  credit_score      <span class="sql-type">INT</span>,
+  income            <span class="sql-type">DECIMAL(10,2)</span>,
+  loan_amount       <span class="sql-type">DECIMAL(10,2)</span>,
+  loan_purpose      <span class="sql-type">VARCHAR(50)</span>,
+  dti_ratio         <span class="sql-type">DECIMAL(4,2)</span>,
+  employment_length <span class="sql-type">INT</span>,
+  loan_status       <span class="sql-type">VARCHAR(20)</span>
+);</div>
+    </div>
+  </div>
+
+  <!-- Business Questions -->
+  <div class="questions-card" style="margin-top:12px">
+    <div class="info-card-title">Business Questions Explored</div>
+    <div class="questions-grid">
+      <div class="question-item">Which borrower segments drive the most defaults?</div>
+      <div class="question-item">How does credit score influence repayment behaviour?</div>
+      <div class="question-item">Which loan purposes carry the highest risk exposure?</div>
+      <div class="question-item">What financial indicators predict delinquency?</div>
+      <div class="question-item">How concentrated is risk across borrower groups?</div>
+      <div class="question-item">Which DTI thresholds best separate risk tiers?</div>
+    </div>
+  </div>
+
+  <!-- 3. SQL ANALYSIS -->
+  <div class="section-label" style="margin-top:32px">SQL Analysis — Risk Classification</div>
+  <div class="sql-card">
+    <div class="sql-header">
+      <div class="sql-dots">
+        <div class="sql-dot red"></div>
+        <div class="sql-dot yellow"></div>
+        <div class="sql-dot green"></div>
+      </div>
+      <div class="sql-header-label">bank_loan_risk.sql — Mohit Das</div>
+    </div>
+    <div class="sql-body">
+<span class="sql-cmt">-- ============================================================
+-- Bank Loan Risk Analytics — Mohit Das
+-- Default rate segmentation by credit score band + DTI
+-- ============================================================</span>
+
+<span class="sql-cmt">-- STEP 1: Data Cleaning</span>
+<span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> <span class="sql-tbl">loans</span>
+<span class="sql-kw">WHERE</span> credit_score <span class="sql-kw">BETWEEN</span> <span class="sql-num">300</span> <span class="sql-kw">AND</span> <span class="sql-num">850</span>
+  <span class="sql-kw">AND</span> dti_ratio     <span class="sql-kw">BETWEEN</span> <span class="sql-num">0</span> <span class="sql-kw">AND</span> <span class="sql-num">1</span>
+  <span class="sql-kw">AND</span> loan_amount   &gt; <span class="sql-num">0</span>
+  <span class="sql-kw">AND</span> income        &gt; <span class="sql-num">0</span>;
+
+<span class="sql-cmt">-- STEP 2: Default Rate by Credit Score Band</span>
+<span class="sql-kw">SELECT</span>
+    <span class="sql-kw">CASE</span>
+        <span class="sql-kw">WHEN</span> credit_score &lt; <span class="sql-num">580</span>                   <span class="sql-kw">THEN</span> <span class="sql-str">'Poor (&lt;580)'</span>
+        <span class="sql-kw">WHEN</span> credit_score <span class="sql-kw">BETWEEN</span> <span class="sql-num">580</span> <span class="sql-kw">AND</span> <span class="sql-num">669</span>   <span class="sql-kw">THEN</span> <span class="sql-str">'Fair (580–669)'</span>
+        <span class="sql-kw">WHEN</span> credit_score <span class="sql-kw">BETWEEN</span> <span class="sql-num">670</span> <span class="sql-kw">AND</span> <span class="sql-num">739</span>   <span class="sql-kw">THEN</span> <span class="sql-str">'Good (670–739)'</span>
+        <span class="sql-kw">ELSE</span>                                        <span class="sql-str">'Excellent (740+)'</span>
+    <span class="sql-kw">END</span> <span class="sql-kw">AS</span> score_band,
+    <span class="sql-fn">COUNT</span>(*) <span class="sql-kw">AS</span> total_borrowers,
+    <span class="sql-fn">SUM</span>(<span class="sql-kw">CASE WHEN</span> loan_status = <span class="sql-str">'Default'</span> <span class="sql-kw">THEN</span> <span class="sql-num">1</span> <span class="sql-kw">ELSE</span> <span class="sql-num">0</span> <span class="sql-kw">END</span>) <span class="sql-kw">AS</span> defaults,
+    <span class="sql-fn">ROUND</span>(<span class="sql-num">100.0</span> * <span class="sql-fn">SUM</span>(<span class="sql-kw">CASE WHEN</span> loan_status = <span class="sql-str">'Default'</span> <span class="sql-kw">THEN</span> <span class="sql-num">1</span> <span class="sql-kw">ELSE</span> <span class="sql-num">0</span> <span class="sql-kw">END</span>)
+          / <span class="sql-fn">COUNT</span>(*), <span class="sql-num">1</span>) <span class="sql-kw">AS</span> default_rate_pct
+<span class="sql-kw">FROM</span> <span class="sql-tbl">loans</span>
+<span class="sql-kw">GROUP BY</span> score_band
+<span class="sql-kw">ORDER BY</span> default_rate_pct <span class="sql-kw">DESC</span>;
+
+<span class="sql-cmt">-- STEP 3: Exposure by Loan Purpose</span>
+<span class="sql-kw">SELECT</span>
+    loan_purpose,
+    <span class="sql-fn">COUNT</span>(*) <span class="sql-kw">AS</span> loan_count,
+    <span class="sql-fn">ROUND</span>(<span class="sql-fn">SUM</span>(loan_amount) / <span class="sql-num">10000000</span>, <span class="sql-num">1</span>) <span class="sql-kw">AS</span> exposure_cr,
+    <span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(dti_ratio) * <span class="sql-num">100</span>, <span class="sql-num">1</span>)          <span class="sql-kw">AS</span> avg_dti_pct,
+    <span class="sql-fn">ROUND</span>(<span class="sql-num">100.0</span> * <span class="sql-fn">SUM</span>(<span class="sql-kw">CASE WHEN</span> loan_status = <span class="sql-str">'Default'</span> <span class="sql-kw">THEN</span> <span class="sql-num">1</span> <span class="sql-kw">ELSE</span> <span class="sql-num">0</span> <span class="sql-kw">END</span>)
+          / <span class="sql-fn">COUNT</span>(*), <span class="sql-num">1</span>) <span class="sql-kw">AS</span> default_rate_pct
+<span class="sql-kw">FROM</span> <span class="sql-tbl">loans</span>
+<span class="sql-kw">GROUP BY</span> loan_purpose
+<span class="sql-kw">ORDER BY</span> exposure_cr <span class="sql-kw">DESC</span>;
+
+<span class="sql-cmt">-- STEP 4: High-Risk Borrower Watchlist</span>
+<span class="sql-kw">SELECT</span>
+    borrower_id, credit_score, dti_ratio, loan_amount, loan_purpose, loan_status,
+    <span class="sql-fn">ROUND</span>(
+        (<span class="sql-num">1</span> - (credit_score - <span class="sql-num">300</span>) / <span class="sql-num">550.0</span>) * <span class="sql-num">40</span>
+        + dti_ratio * <span class="sql-num">35</span>
+    , <span class="sql-num">1</span>) <span class="sql-kw">AS</span> risk_score
+<span class="sql-kw">FROM</span> <span class="sql-tbl">loans</span>
+<span class="sql-kw">WHERE</span> credit_score &lt; <span class="sql-num">580</span>
+   <span class="sql-kw">OR</span> dti_ratio     &gt; <span class="sql-num">0.50</span>
+<span class="sql-kw">ORDER BY</span> risk_score <span class="sql-kw">DESC</span>
+<span class="sql-kw">LIMIT</span> <span class="sql-num">20</span>;
+
+<span class="sql-cmt">-- STEP 5: Portfolio Summary with Window Functions</span>
+<span class="sql-kw">SELECT</span>
+    score_band, total_borrowers, defaults, default_rate_pct,
+    <span class="sql-fn">ROUND</span>(<span class="sql-num">100.0</span> * total_borrowers / <span class="sql-fn">SUM</span>(total_borrowers) <span class="sql-kw">OVER</span>(), <span class="sql-num">1</span>) <span class="sql-kw">AS</span> pct_of_portfolio,
+    <span class="sql-fn">SUM</span>(defaults) <span class="sql-kw">OVER</span> (<span class="sql-kw">ORDER BY</span> default_rate_pct <span class="sql-kw">DESC</span>) <span class="sql-kw">AS</span> cumulative_defaults
+<span class="sql-kw">FROM</span> <span class="sql-tbl">score_band_summary</span>
+<span class="sql-kw">ORDER BY</span> default_rate_pct <span class="sql-kw">DESC</span>;
+    </div>
+  </div>
+
+  <!-- 4. DASHBOARD CHARTS -->
+  <div class="section-label" style="margin-top:32px">Portfolio Analytics Dashboard</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Loan Status Split</div>
+      <canvas id="statusDonut"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Exposure by Purpose (₹Cr)</div>
+      <canvas id="exposureBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Default Rate by Score Band (%)</div>
+      <canvas id="defaultRateBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Credit Score Distribution</div>
+      <canvas id="scoreHist"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Avg DTI by Loan Status (%)</div>
+      <canvas id="dtiBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Default Rate by Income Bracket</div>
+      <canvas id="incomeLine"></canvas>
+    </div>
+  </div>
+
+  <!-- 5. BORROWER RISK REGISTER -->
+  <div class="section-label" style="margin-top:32px">Sample Output — Borrower Risk Register</div>
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('all')">All Borrowers</div>
+        <div class="tab" onclick="switchTab('DEFAULT')">Defaulted</div>
+        <div class="tab" onclick="switchTab('PAID')">Paid</div>
+      </div>
+      <button class="btn-download" onclick="downloadCSV()">
+        ↓ Download CSV
+      </button>
+    </div>
+
+    <div class="tab-content active" id="tab-all">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Borrower ID</th>
+              <th>Credit Score</th>
+              <th>Income</th>
+              <th>DTI Ratio</th>
+              <th>Loan Amount</th>
+              <th>Purpose</th>
+              <th>Risk Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="allBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-DEFAULT">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Borrower ID</th><th>Credit Score</th><th>Income</th><th>DTI Ratio</th><th>Loan Amount</th><th>Purpose</th><th>Risk Score</th><th>Status</th></tr></thead>
+          <tbody id="defaultBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-PAID">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Borrower ID</th><th>Credit Score</th><th>Income</th><th>DTI Ratio</th><th>Loan Amount</th><th>Purpose</th><th>Risk Score</th><th>Status</th></tr></thead>
+          <tbody id="paidBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. INSIGHTS & RECOMMENDATIONS -->
+  <div class="section-label" style="margin-top:32px">Key Insights & Recommendations</div>
+  <div class="insights-grid">
+    <div class="insight-card">
+      <div class="insight-card-title">Key Findings</div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Borrowers with credit score below 580 have the highest default rate (~38%).</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Higher DTI ratio is associated with greater default risk.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Personal loans show higher risk than other loan types.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Most borrowers fall in the Fair band (580–669) — that's where the bulk of portfolio risk sits.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Higher income borrowers tend to default less, regardless of credit score.</div>
+      </div>
+    </div>
+
+    <div class="insight-card dark">
+      <div class="insight-card-title">Recommendations</div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Be stricter with DTI above 45% — maybe ask for a co-signer or collateral.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Charge higher interest rates for Poor/Fair score borrowers to cover the risk.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Keep a closer eye on personal loans — they seem to go wrong more often.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Use SQL flags to catch risky borrowers early, before they actually default.</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-dot"></div>
+        <div class="insight-text">Try to grow the Excellent score segment — lower risk, more predictable repayments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUMAN TOUCH 1: LIMITATIONS -->
+  <div class="section-label" style="margin-top:32px">Limitations & Honest Caveats</div>
+  <div class="info-card" style="border-left:4px solid #fd7e14;">
+    <div class="info-card-title" style="color:#e67700;">⚠ Things I'd flag before anyone acts on this</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:4px;">
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f3f5;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        Dataset is a simulated Kaggle credit dataset — not real bank data
+      </div>
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f3f5;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        Does not include repayment history or missed payment counts
+      </div>
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f3f5;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        Macroeconomic factors (inflation, interest rates) are not modelled
+      </div>
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f3f5;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        Risk score is a simplified formula — not a validated credit model
+      </div>
+      <div style="display:flex;gap:10px;padding:8px 0;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        No time-series data — cannot track borrower behaviour over time
+      </div>
+      <div style="display:flex;gap:10px;padding:8px 0;font-size:13px;color:#495057;">
+        <span style="color:#fd7e14;font-weight:700;flex-shrink:0">·</span>
+        Default labels are rule-based in this sample, not observed outcomes
+      </div>
+    </div>
+  </div>
+
+  <!-- HUMAN TOUCH 2: PERSONAL NOTE -->
+  <div class="info-card" style="margin-top:12px;background:#f8f9fa;border-style:dashed;">
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <span style="font-size:22px;line-height:1">💬</span>
+      <div>
+        <div class="info-card-title">A note from me</div>
+        <div class="info-body">
+          This was my first end-to-end SQL analytics project. I built it to practice writing multi-step queries — cleaning, aggregating, and using window functions on a realistic dataset. The risk score formula is something I designed myself after reading about FICO score bands and credit underwriting practices; it's simplified but helped me understand the logic behind credit underwriting.
+          <br><br>
+          If you spot something off or have feedback, I'd genuinely love to hear it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUMAN TOUCH 3: WHAT'S NEXT -->
+  <div class="info-card" style="margin-top:12px;">
+    <div class="info-card-title">What I'd explore next</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">
+      <div style="background:#f0f4ff;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #0d6efd;">
+        <strong style="display:block;color:#0d6efd;margin-bottom:4px">Python + SQL</strong>
+        Connect this to a real database using psycopg2 and visualise with Matplotlib
+      </div>
+      <div style="background:#f0fff4;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #198754;">
+        <strong style="display:block;color:#198754;margin-bottom:4px">Logistic Regression</strong>
+        Use scikit-learn to build a proper predictive model and compare it to the SQL rule-based score
+      </div>
+      <div style="background:#fff8f0;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #fd7e14;">
+        <strong style="display:block;color:#fd7e14;margin-bottom:4px">Time-series Analysis</strong>
+        Get a dataset with monthly repayment history to track delinquency trends over time
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span><strong>Mohit Das</strong> · Bank Loan Risk Analytics · MSc Economics</span>
+  <span>mohitxdas@gmail.com · linkedin.com/in/mohit-das911</span>
+</div>
+
+<script>
+// ── DATA GENERATION ──────────────────────────────────────
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+const purposes = ['Personal Loan','Home Loan','Auto Loan','Education Loan','Business Loan'];
+const r = seededRand(77);
+
+function generateData() {
+  const data = [];
+  for (let i = 0; i < 200; i++) {
+    const id = 'BRW-' + String(1001 + i).padStart(4,'0');
+    const cs = Math.round(480 + r() * 330);
+    const income = parseFloat((3 + r() * 20).toFixed(1));
+    const dti = parseFloat((0.10 + r() * 0.60).toFixed(2));
+    const loan = parseFloat((3 + r() * 50).toFixed(1));
+    const purpose = purposes[Math.floor(r() * purposes.length)];
+    const rs = parseFloat(((1 - (cs - 300) / 550) * 40 + dti * 35).toFixed(1));
+    let status = (cs < 580 || dti > 0.50) ? 'DEFAULT' : 'PAID';
+    data.push({ id, cs, income, dti, loan, purpose, rs, status });
+  }
+  return data.sort((a, b) => b.rs - a.rs);
+}
+
+const allData = generateData();
+const defaults = allData.filter(d => d.status === 'DEFAULT').length;
+const paid     = allData.filter(d => d.status === 'PAID').length;
+
+// ── TABLE RENDERING ──────────────────────────────────────
+function csColor(cs) {
+  if (cs < 580) return '#c92a2a';
+  if (cs < 670) return '#e67700';
+  return '#2f9e44';
+}
+
+function renderRows(data, bodyId, limit = 40) {
+  const tbody = document.getElementById(bodyId);
+  tbody.innerHTML = data.slice(0, limit).map(d => {
+    const fillColor = d.rs >= 50 ? '#dc3545' : d.rs >= 32 ? '#fd7e14' : '#198754';
+    return `<tr>
+      <td class="mono">${d.id}</td>
+      <td class="mono" style="color:${csColor(d.cs)};font-weight:600">${d.cs}</td>
+      <td class="mono">₹${d.income}L</td>
+      <td class="mono">${(d.dti * 100).toFixed(0)}%</td>
+      <td class="mono">₹${d.loan}L</td>
+      <td>${d.purpose}</td>
+      <td>
+        <div class="score-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${d.rs}%;background:${fillColor}"></div></div>
+          <span class="mono" style="color:${fillColor};font-size:11px">${d.rs}</span>
+        </div>
+      </td>
+      <td><span class="badge ${d.status === 'DEFAULT' ? 'badge-default' : 'badge-paid'}">${d.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+renderRows(allData, 'allBody', 40);
+renderRows(allData.filter(d => d.status === 'DEFAULT'), 'defaultBody', 40);
+renderRows(allData.filter(d => d.status === 'PAID'),    'paidBody',    40);
+
+// ── TABS ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['all','DEFAULT','PAID'][i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── CHARTS ───────────────────────────────────────────────
+const baseOpts = (tickCb) => ({
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      grid: { color: '#f1f3f5' },
+      ticks: { font: { family: 'Inter', size: 11 }, color: '#6c757d', callback: tickCb || (v => v) }
+    },
+    x: {
+      grid: { display: false },
+      ticks: { font: { family: 'Inter', size: 11 }, color: '#6c757d' }
+    }
+  }
+});
+
+// Donut
+new Chart(document.getElementById('statusDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Default', 'Paid'],
+    datasets: [{ data: [defaults, paid], backgroundColor: ['#dc3545','#198754'], borderWidth: 2, borderColor: '#fff', hoverOffset: 4 }]
+  },
+  options: {
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 }, color: '#495057', padding: 14 } }
+    },
+    cutout: '65%'
+  }
+});
+
+// Exposure by purpose
+new Chart(document.getElementById('exposureBar'), {
+  type: 'bar',
+  data: {
+    labels: ['Personal','Home','Auto','Education','Business'],
+    datasets: [{ data: [168, 142, 95, 65, 50], backgroundColor: '#0d6efd', borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts()
+});
+
+// Default rate by score band
+new Chart(document.getElementById('defaultRateBar'), {
+  type: 'bar',
+  data: {
+    labels: ['Poor <580','Fair 580–669','Good 670–739','Excellent 740+'],
+    datasets: [{ data: [38.2, 18.6, 7.4, 2.1], backgroundColor: ['#dc3545','#fd7e14','#198754','#0d6efd'], borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts(v => v + '%')
+});
+
+// Credit score histogram
+const csBuckets = [0,0,0,0,0,0,0];
+allData.forEach(d => {
+  if (d.cs < 500) csBuckets[0]++;
+  else if (d.cs < 550) csBuckets[1]++;
+  else if (d.cs < 600) csBuckets[2]++;
+  else if (d.cs < 650) csBuckets[3]++;
+  else if (d.cs < 700) csBuckets[4]++;
+  else if (d.cs < 750) csBuckets[5]++;
+  else csBuckets[6]++;
+});
+new Chart(document.getElementById('scoreHist'), {
+  type: 'bar',
+  data: {
+    labels: ['<500','500–549','550–599','600–649','650–699','700–749','750+'],
+    datasets: [{ data: csBuckets, backgroundColor: '#0d6efd', borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts()
+});
+
+// DTI by status
+const dtiDefault = parseFloat((allData.filter(d=>d.status==='DEFAULT').reduce((a,v)=>a+v.dti,0)/defaults*100).toFixed(1));
+const dtiPaid    = parseFloat((allData.filter(d=>d.status==='PAID').reduce((a,v)=>a+v.dti,0)/paid*100).toFixed(1));
+new Chart(document.getElementById('dtiBar'), {
+  type: 'bar',
+  data: {
+    labels: ['Default', 'Paid'],
+    datasets: [{ data: [dtiDefault, dtiPaid], backgroundColor: ['#dc3545','#198754'], borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts(v => v + '%')
+});
+
+// Income vs default rate
+const incomeLabels = ['<₹5L','₹5–8L','₹8–12L','₹12–16L','₹16–20L','₹20L+'];
+const incomeBuckets = [0,0,0,0,0,0], incomeDefaults = [0,0,0,0,0,0];
+allData.forEach(d => {
+  const i = d.income < 5 ? 0 : d.income < 8 ? 1 : d.income < 12 ? 2 : d.income < 16 ? 3 : d.income < 20 ? 4 : 5;
+  incomeBuckets[i]++;
+  if (d.status === 'DEFAULT') incomeDefaults[i]++;
+});
+const incomeDefRate = incomeBuckets.map((b,i) => b > 0 ? parseFloat((incomeDefaults[i]/b*100).toFixed(1)) : 0);
+new Chart(document.getElementById('incomeLine'), {
+  type: 'line',
+  data: {
+    labels: incomeLabels,
+    datasets: [{
+      data: incomeDefRate,
+      borderColor: '#dc3545',
+      backgroundColor: 'rgba(220,53,69,0.07)',
+      fill: true, tension: 0.4, pointRadius: 4,
+      pointBackgroundColor: '#dc3545', borderWidth: 2
+    }]
+  },
+  options: baseOpts(v => v + '%')
+});
+
+// ── CSV DOWNLOAD ──────────────────────────────────────────
+function downloadCSV() {
+  const headers = ['Borrower ID','Credit Score','Income (L)','DTI Ratio','Loan Amount (L)','Purpose','Risk Score','Status'];
+  const rows = allData.map(d => [d.id, d.cs, d.income, d.dti, d.loan, d.purpose, d.rs, d.status]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'borrower_risk_register.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

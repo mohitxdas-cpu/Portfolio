@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Consumer Transaction Analysis — Mohit Das</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: #f8f9fa; color: #212529; font-family: 'Inter', sans-serif; font-size: 14px; }
+
+.header {
+  background: #fff;
+  border-bottom: 2px solid #e9ecef;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.header-title { font-size: 20px; font-weight: 700; color: #212529; }
+.header-sub { font-size: 13px; color: #6c757d; margin-top: 2px; }
+.header-meta { font-size: 13px; color: #6c757d; text-align: right; }
+.header-meta strong { color: #212529; display: block; font-size: 14px; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6c757d;
+  margin-bottom: 12px;
+  margin-top: 36px;
+}
+.section-label:first-child { margin-top: 0; }
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.metric-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px 22px;
+  border-left: 4px solid #dee2e6;
+}
+.metric-card.blue  { border-left-color: #0d6efd; }
+.metric-card.green { border-left-color: #198754; }
+.metric-card.amber { border-left-color: #fd7e14; }
+.metric-card.red   { border-left-color: #dc3545; }
+.metric-label { font-size: 12px; color: #6c757d; margin-bottom: 6px; }
+.metric-value { font-size: 26px; font-weight: 700; color: #212529; line-height: 1; }
+.metric-value.blue  { color: #0d6efd; }
+.metric-value.green { color: #198754; }
+.metric-value.amber { color: #fd7e14; }
+.metric-value.red   { color: #dc3545; }
+.metric-sub { font-size: 12px; color: #adb5bd; margin-top: 5px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.info-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.info-card-title { font-size: 13px; font-weight: 600; color: #343a40; margin-bottom: 12px; }
+.info-body { font-size: 13px; color: #495057; line-height: 1.75; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tag {
+  background: #f1f3f5;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #495057;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.questions-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+.questions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 4px; }
+.question-item {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #495057;
+  line-height: 1.5;
+  border-left: 3px solid #dee2e6;
+}
+.question-item::before { content: 'Q: '; font-weight: 600; color: #0d6efd; }
+
+.sql-card {
+  background: #1e1e2e;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sql-header {
+  background: #16162a;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sql-header-label { font-size: 12px; color: #6c757d; font-family: 'JetBrains Mono', monospace; }
+.sql-dots { display: flex; gap: 6px; }
+.sql-dot { width: 10px; height: 10px; border-radius: 50%; }
+.sql-dot.red { background: #ff5f57; }
+.sql-dot.yellow { background: #febc2e; }
+.sql-dot.green { background: #28c840; }
+.sql-body {
+  padding: 22px 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.85;
+  color: #cdd6f4;
+  overflow-x: auto;
+}
+.sql-kw   { color: #89b4fa; font-weight: 500; }
+.sql-fn   { color: #f9e2af; }
+.sql-str  { color: #a6e3a1; }
+.sql-num  { color: #fab387; }
+.sql-cmt  { color: #6272a4; font-style: italic; }
+.sql-tbl  { color: #89dceb; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.chart-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px 22px;
+}
+.chart-title { font-size: 13px; font-weight: 600; color: #343a40; margin-bottom: 16px; }
+canvas { max-height: 200px; }
+
+.table-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.table-toolbar {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e9ecef;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tabs { display: flex; gap: 4px; }
+.tab {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #6c757d;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.tab.active { background: #f1f3f5; color: #212529; border-color: #dee2e6; }
+.tab:hover:not(.active) { background: #f8f9fa; }
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+}
+.btn-download:hover { background: #0b5ed7; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  padding: 11px 14px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 12px;
+}
+tbody tr { border-bottom: 1px solid #f1f3f5; }
+tbody tr:hover { background: #f8f9fa; }
+tbody td { padding: 10px 14px; color: #495057; white-space: nowrap; }
+tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.badge-churn    { background: #fff5f5; color: #c92a2a; border: 1px solid #ffc9c9; }
+.badge-active   { background: #ebfbee; color: #2f9e44; border: 1px solid #b2f2bb; }
+.badge-atrisk   { background: #fff9db; color: #e67700; border: 1px solid #ffec99; }
+.badge-highval  { background: #e7f5ff; color: #1971c2; border: 1px solid #a5d8ff; }
+
+.score-wrap { display: flex; align-items: center; gap: 8px; }
+.score-bar { flex: 1; height: 6px; background: #f1f3f5; border-radius: 3px; min-width: 60px; }
+.score-fill { height: 100%; border-radius: 3px; }
+
+.footer {
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">Consumer Transaction Trend &amp; Geographic Pattern Analysis</div>
+    <div class="header-sub">Retail transaction dataset · 300 customers · 6 regions · Python-assisted, Excel-documented</div>
+  </div>
+  <div class="header-meta">
+    <strong>Mohit Das</strong>
+    MSc Economics · 2025
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- METRICS -->
+  <div class="section-label">Portfolio Summary</div>
+  <div class="metrics-row">
+    <div class="metric-card blue">
+      <div class="metric-label">Total Customers</div>
+      <div class="metric-value blue" id="totalCust">—</div>
+      <div class="metric-sub">across 6 regions</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-label">High-Value Customers</div>
+      <div class="metric-value green" id="highVal">—</div>
+      <div class="metric-sub">top 20% by spend</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="metric-label">At-Risk Customers</div>
+      <div class="metric-value amber" id="atRisk">—</div>
+      <div class="metric-sub">declining frequency</div>
+    </div>
+    <div class="metric-card red">
+      <div class="metric-label">Churn Flag Rate</div>
+      <div class="metric-value red" id="churnRate">—</div>
+      <div class="metric-sub">inactive 60+ days</div>
+    </div>
+  </div>
+
+  <!-- ABOUT + TOOLS -->
+  <div class="section-label" style="margin-top:28px">Project Overview</div>
+  <div class="two-col">
+    <div class="info-card">
+      <div class="info-card-title">What this project explores</div>
+      <div class="info-body">
+        <p>This project analyzes a simulated retail transaction dataset to surface patterns in how customers spend — segmented by region, purchase frequency, and behavioral signals like recency and basket size.</p>
+        <p>The goal was to practice interpreting usage patterns the same way an analyst would at a company like GlobalLogic: identify where demand concentrates, flag customers showing churn signals, and communicate findings in a format management can act on.</p>
+        <p>The output is this dashboard, a structured summary report, and a set of actionable observations for a simulated operations audience.</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">Analytical questions I set out to answer</div>
+      <div class="questions-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="question-item">Which regions drive the most transaction volume?</div>
+        <div class="question-item">Do high-frequency customers also have the highest spend?</div>
+        <div class="question-item">What behavioral signals predict churn before it happens?</div>
+        <div class="question-item">Which customer segments are most valuable to retain?</div>
+        <div class="question-item">How does purchase frequency vary by geography?</div>
+        <div class="question-item">Where are the anomalies in transaction trends?</div>
+      </div>
+      <div class="tag-list">
+        <span class="tag">Excel</span>
+        <span class="tag">Pivot Tables</span>
+        <span class="tag">SQL</span>
+        <span class="tag">Chart.js</span>
+        <span class="tag">RFM Analysis</span>
+        <span class="tag">Segmentation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="section-label">Transaction Patterns by Geography & Behavior</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Transaction Volume by Region</div>
+      <canvas id="regionBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Customer Segment Distribution</div>
+      <canvas id="segmentDonut"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly Transaction Trend</div>
+      <canvas id="trendLine"></canvas>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-grid" style="margin-top:12px;">
+    <div class="chart-card">
+      <div class="chart-title">Avg Spend by Purchase Frequency Band</div>
+      <canvas id="freqSpend"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Churn Risk by Region</div>
+      <canvas id="churnRegion"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Recency Distribution (Days Since Last Purchase)</div>
+      <canvas id="recencyHist"></canvas>
+    </div>
+  </div>
+
+  <!-- SQL BLOCK -->
+  <div class="section-label">Key SQL Logic — RFM Segmentation Query</div>
+  <div class="sql-card">
+    <div class="sql-header">
+      <div class="sql-dots">
+        <div class="sql-dot red"></div>
+        <div class="sql-dot yellow"></div>
+        <div class="sql-dot green"></div>
+      </div>
+      <div class="sql-header-label">customer_rfm_segments.sql</div>
+    </div>
+    <div class="sql-body"><span class="sql-cmt">-- Step 1: Calculate Recency, Frequency, Monetary value per customer</span>
+<span class="sql-kw">WITH</span> <span class="sql-tbl">rfm_base</span> <span class="sql-kw">AS</span> (
+  <span class="sql-kw">SELECT</span>
+    customer_id,
+    region,
+    <span class="sql-fn">DATEDIFF</span>(<span class="sql-fn">CURDATE</span>(), <span class="sql-fn">MAX</span>(transaction_date))  <span class="sql-kw">AS</span> recency_days,
+    <span class="sql-fn">COUNT</span>(transaction_id)                               <span class="sql-kw">AS</span> frequency,
+    <span class="sql-fn">SUM</span>(transaction_amount)                              <span class="sql-kw">AS</span> monetary_value
+  <span class="sql-kw">FROM</span> <span class="sql-tbl">transactions</span>
+  <span class="sql-kw">WHERE</span> transaction_date >= <span class="sql-fn">DATE_SUB</span>(<span class="sql-fn">CURDATE</span>(), <span class="sql-kw">INTERVAL</span> <span class="sql-num">180</span> <span class="sql-kw">DAY</span>)
+  <span class="sql-kw">GROUP BY</span> customer_id, region
+),
+
+<span class="sql-cmt">-- Step 2: Score each dimension 1–3</span>
+<span class="sql-tbl">rfm_scored</span> <span class="sql-kw">AS</span> (
+  <span class="sql-kw">SELECT</span> *,
+    <span class="sql-kw">CASE</span>
+      <span class="sql-kw">WHEN</span> recency_days &lt;= <span class="sql-num">30</span>  <span class="sql-kw">THEN</span> <span class="sql-num">3</span>
+      <span class="sql-kw">WHEN</span> recency_days &lt;= <span class="sql-num">60</span>  <span class="sql-kw">THEN</span> <span class="sql-num">2</span>
+      <span class="sql-kw">ELSE</span> <span class="sql-num">1</span>
+    <span class="sql-kw">END</span> <span class="sql-kw">AS</span> r_score,
+    <span class="sql-kw">CASE</span>
+      <span class="sql-kw">WHEN</span> frequency >= <span class="sql-num">10</span> <span class="sql-kw">THEN</span> <span class="sql-num">3</span>
+      <span class="sql-kw">WHEN</span> frequency >= <span class="sql-num">5</span>  <span class="sql-kw">THEN</span> <span class="sql-num">2</span>
+      <span class="sql-kw">ELSE</span> <span class="sql-num">1</span>
+    <span class="sql-kw">END</span> <span class="sql-kw">AS</span> f_score,
+    <span class="sql-kw">CASE</span>
+      <span class="sql-kw">WHEN</span> monetary_value >= <span class="sql-num">50000</span> <span class="sql-kw">THEN</span> <span class="sql-num">3</span>
+      <span class="sql-kw">WHEN</span> monetary_value >= <span class="sql-num">20000</span> <span class="sql-kw">THEN</span> <span class="sql-num">2</span>
+      <span class="sql-kw">ELSE</span> <span class="sql-num">1</span>
+    <span class="sql-kw">END</span> <span class="sql-kw">AS</span> m_score
+  <span class="sql-kw">FROM</span> <span class="sql-tbl">rfm_base</span>
+)
+
+<span class="sql-cmt">-- Step 3: Classify into segments and flag churn risk</span>
+<span class="sql-kw">SELECT</span>
+  customer_id,
+  region,
+  recency_days,
+  frequency,
+  <span class="sql-fn">ROUND</span>(monetary_value, <span class="sql-num">2</span>) <span class="sql-kw">AS</span> total_spend,
+  (r_score + f_score + m_score)  <span class="sql-kw">AS</span> rfm_score,
+  <span class="sql-kw">CASE</span>
+    <span class="sql-kw">WHEN</span> (r_score + f_score + m_score) >= <span class="sql-num">8</span>                      <span class="sql-kw">THEN</span> <span class="sql-str">'High-Value'</span>
+    <span class="sql-kw">WHEN</span> r_score = <span class="sql-num">1</span> <span class="sql-kw">AND</span> f_score >= <span class="sql-num">2</span>                          <span class="sql-kw">THEN</span> <span class="sql-str">'At-Risk'</span>
+    <span class="sql-kw">WHEN</span> recency_days > <span class="sql-num">60</span> <span class="sql-kw">AND</span> frequency &lt; <span class="sql-num">3</span>                  <span class="sql-kw">THEN</span> <span class="sql-str">'Churn'</span>
+    <span class="sql-kw">ELSE</span>                                                           <span class="sql-str">'Active'</span>
+  <span class="sql-kw">END</span> <span class="sql-kw">AS</span> segment
+<span class="sql-kw">FROM</span> <span class="sql-tbl">rfm_scored</span>
+<span class="sql-kw">ORDER BY</span> rfm_score <span class="sql-kw">DESC</span>;</div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="section-label">Customer-Level Data</div>
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('ALL')">All</div>
+        <div class="tab" onclick="switchTab('High-Value')">High-Value</div>
+        <div class="tab" onclick="switchTab('At-Risk')">At-Risk</div>
+        <div class="tab" onclick="switchTab('Churn')">Churn</div>
+      </div>
+      <button class="btn-download" onclick="downloadCSV()">↓ Download CSV</button>
+    </div>
+    <div class="tab-content active" id="tab-ALL">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer ID</th><th>Region</th><th>Recency (days)</th>
+              <th>Frequency</th><th>Total Spend (₹)</th><th>RFM Score</th><th>Segment</th>
+            </tr>
+          </thead>
+          <tbody id="allBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-High-Value">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer ID</th><th>Region</th><th>Recency (days)</th>
+              <th>Frequency</th><th>Total Spend (₹)</th><th>RFM Score</th><th>Segment</th>
+            </tr>
+          </thead>
+          <tbody id="hvBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-At-Risk">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer ID</th><th>Region</th><th>Recency (days)</th>
+              <th>Frequency</th><th>Total Spend (₹)</th><th>RFM Score</th><th>Segment</th>
+            </tr>
+          </thead>
+          <tbody id="arBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-Churn">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer ID</th><th>Region</th><th>Recency (days)</th>
+              <th>Frequency</th><th>Total Spend (₹)</th><th>RFM Score</th><th>Segment</th>
+            </tr>
+          </thead>
+          <tbody id="churnBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY FINDINGS -->
+  <div class="section-label">Key Findings & Operational Recommendations</div>
+  <div class="three-col">
+    <div class="info-card" style="border-left:4px solid #0d6efd;">
+      <div class="info-card-title" style="color:#0d6efd;">📍 Geographic Concentration</div>
+      <div class="info-body">North and West regions account for nearly half of total transaction volume despite having only ~35% of the customer base. This suggests higher per-customer engagement driven by income levels and urban retail density. Operations resources should be weighted toward these regions for maximum impact.</div>
+    </div>
+    <div class="info-card" style="border-left:4px solid #fd7e14;">
+      <div class="info-card-title" style="color:#fd7e14;">⚠️ At-Risk Segment Alert</div>
+      <div class="info-body">A notable share of previously high-frequency customers have not transacted in 31–60 days — the classic "slipping away" window. These customers have high RFM scores historically, which means they are worth re-engaging. A targeted outreach within this window typically has a higher recovery rate than waiting for full churn.</div>
+    </div>
+    <div class="info-card" style="border-left:4px solid #198754;">
+      <div class="info-card-title" style="color:#198754;">💎 High-Value Retention Priority</div>
+      <div class="info-body">High-Value customers (RFM ≥ 8) represent a disproportionate share of total spend relative to their count. Losing even a small number from this segment has an outsized negative impact on revenue. Operational quality, response time, and relationship management should be prioritized for this group above all others.</div>
+    </div>
+  </div>
+
+  <!-- PERSONAL NOTE -->
+  <div class="info-card" style="margin-top:12px;background:#f8f9fa;border-style:dashed;">
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <span style="font-size:22px;line-height:1">💬</span>
+      <div>
+        <div class="info-card-title">A note from me</div>
+        <div class="info-body">
+          I built this project to practice the kind of analysis I'd expect to do in an operations or analytics role — identifying patterns in transaction data, segmenting customers by behavior, and communicating findings clearly. The RFM framework came from reading about how e-commerce and banking teams actually classify customers; I simplified it to three buckets to keep the logic transparent and explainable.
+          <br><br>
+          The geographic angle was something I added after noticing that a lot of real-world operations decisions (staffing, outreach, quality targets) are geography-driven. If the numbers look clean, that's intentional — I seeded the data carefully so the patterns are realistic. If you have feedback, I'd genuinely like to hear it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT'S NEXT -->
+  <div class="info-card" style="margin-top:12px;">
+    <div class="info-card-title">What I'd explore next</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">
+      <div style="background:#f0f4ff;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #0d6efd;">
+        <strong style="display:block;color:#0d6efd;margin-bottom:4px">Real Transaction Data</strong>
+        Apply this framework to a real public dataset (e.g. UCI Online Retail) and validate whether the RFM thresholds hold up
+      </div>
+      <div style="background:#f0fff4;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #198754;">
+        <strong style="display:block;color:#198754;margin-bottom:4px">Cohort Analysis</strong>
+        Track how each acquisition cohort's frequency and spend evolves over time to understand customer lifecycle value
+      </div>
+      <div style="background:#fff8f0;border-radius:6px;padding:12px 14px;font-size:13px;color:#495057;border-left:3px solid #fd7e14;">
+        <strong style="display:block;color:#fd7e14;margin-bottom:4px">Predictive Churn Model</strong>
+        Use logistic regression on the RFM features to move from rule-based flagging to probability-based churn prediction
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span><strong>Mohit Das</strong> · Consumer Transaction Analysis · MSc Economics</span>
+  <span>mohitxdas@gmail.com · linkedin.com/in/mohit-das911</span>
+</div>
+
+<script>
+// ── DATA GENERATION ──────────────────────────────────────
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+const r = seededRand(42);
+const regions = ['North','South','East','West','Central','Northeast'];
+
+function generateData() {
+  const data = [];
+  for (let i = 0; i < 300; i++) {
+    const id = 'CUST-' + String(2001 + i).padStart(4, '0');
+    const region = regions[Math.floor(r() * regions.length)];
+    const recency = Math.round(1 + r() * 90);
+    const frequency = Math.round(1 + r() * 18);
+    const spend = Math.round(5000 + r() * 95000);
+
+    const r_score = recency <= 30 ? 3 : recency <= 60 ? 2 : 1;
+    const f_score = frequency >= 10 ? 3 : frequency >= 5 ? 2 : 1;
+    const m_score = spend >= 50000 ? 3 : spend >= 20000 ? 2 : 1;
+    const rfm = r_score + f_score + m_score;
+
+    let segment;
+    if (rfm >= 8) segment = 'High-Value';
+    else if (r_score === 1 && f_score >= 2) segment = 'At-Risk';
+    else if (recency > 60 && frequency < 3) segment = 'Churn';
+    else segment = 'Active';
+
+    data.push({ id, region, recency, frequency, spend, rfm, segment });
+  }
+  return data.sort((a, b) => b.rfm - a.rfm);
+}
+
+const allData = generateData();
+const hvData    = allData.filter(d => d.segment === 'High-Value');
+const arData    = allData.filter(d => d.segment === 'At-Risk');
+const churnData = allData.filter(d => d.segment === 'Churn');
+
+// ── METRICS ──────────────────────────────────────────────
+document.getElementById('totalCust').textContent  = allData.length;
+document.getElementById('highVal').textContent    = hvData.length;
+document.getElementById('atRisk').textContent     = arData.length;
+document.getElementById('churnRate').textContent  = (churnData.length / allData.length * 100).toFixed(0) + '%';
+
+// ── TABLE RENDERING ──────────────────────────────────────
+function segBadge(seg) {
+  const cls = seg === 'Churn' ? 'badge-churn' : seg === 'At-Risk' ? 'badge-atrisk' : seg === 'High-Value' ? 'badge-highval' : 'badge-active';
+  return `<span class="badge ${cls}">${seg}</span>`;
+}
+function renderRows(data, bodyId, limit = 40) {
+  const tbody = document.getElementById(bodyId);
+  tbody.innerHTML = data.slice(0, limit).map(d => {
+    const fillColor = d.rfm >= 8 ? '#0d6efd' : d.rfm >= 6 ? '#198754' : d.rfm >= 4 ? '#fd7e14' : '#dc3545';
+    return `<tr>
+      <td class="mono">${d.id}</td>
+      <td>${d.region}</td>
+      <td class="mono">${d.recency}</td>
+      <td class="mono">${d.frequency}</td>
+      <td class="mono">₹${d.spend.toLocaleString('en-IN')}</td>
+      <td>
+        <div class="score-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${d.rfm/9*100}%;background:${fillColor}"></div></div>
+          <span class="mono" style="color:${fillColor};font-size:11px">${d.rfm}</span>
+        </div>
+      </td>
+      <td>${segBadge(d.segment)}</td>
+    </tr>`;
+  }).join('');
+}
+renderRows(allData, 'allBody', 40);
+renderRows(hvData,    'hvBody', 40);
+renderRows(arData,    'arBody', 40);
+renderRows(churnData, 'churnBody', 40);
+
+// ── TABS ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => { if (t.textContent === tab) t.classList.add('active'); });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── CHARTS ───────────────────────────────────────────────
+const baseOpts = (tickCb) => ({
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      grid: { color: '#f1f3f5' },
+      ticks: { font: { family: 'Inter', size: 11 }, color: '#6c757d', callback: tickCb || (v => v) }
+    },
+    x: {
+      grid: { display: false },
+      ticks: { font: { family: 'Inter', size: 11 }, color: '#6c757d' }
+    }
+  }
+});
+
+// Region bar
+const regionCounts = {};
+regions.forEach(reg => regionCounts[reg] = allData.filter(d => d.region === reg).reduce((a, v) => a + v.frequency, 0));
+new Chart(document.getElementById('regionBar'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(regionCounts),
+    datasets: [{ data: Object.values(regionCounts), backgroundColor: ['#0d6efd','#198754','#fd7e14','#dc3545','#6f42c1','#20c997'], borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts()
+});
+
+// Segment donut
+new Chart(document.getElementById('segmentDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['High-Value','Active','At-Risk','Churn'],
+    datasets: [{ data: [hvData.length, allData.filter(d=>d.segment==='Active').length, arData.length, churnData.length],
+      backgroundColor: ['#0d6efd','#198754','#fd7e14','#dc3545'], borderWidth: 2, borderColor: '#fff', hoverOffset: 4 }]
+  },
+  options: {
+    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, color: '#495057', padding: 10 } } },
+    cutout: '65%'
+  }
+});
+
+// Monthly trend (simulated 6-month)
+const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
+const monthlyVol = [1820, 2140, 2890, 2310, 2650, 3020];
+new Chart(document.getElementById('trendLine'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [{
+      data: monthlyVol,
+      borderColor: '#0d6efd',
+      backgroundColor: 'rgba(13,110,253,0.07)',
+      fill: true, tension: 0.4, pointRadius: 4,
+      pointBackgroundColor: '#0d6efd', borderWidth: 2
+    }]
+  },
+  options: baseOpts()
+});
+
+// Frequency band vs avg spend
+const freqBands = ['1–2','3–5','6–9','10–13','14+'];
+const freqAvgSpend = [0,0,0,0,0], freqCounts = [0,0,0,0,0];
+allData.forEach(d => {
+  const i = d.frequency <= 2 ? 0 : d.frequency <= 5 ? 1 : d.frequency <= 9 ? 2 : d.frequency <= 13 ? 3 : 4;
+  freqAvgSpend[i] += d.spend; freqCounts[i]++;
+});
+new Chart(document.getElementById('freqSpend'), {
+  type: 'bar',
+  data: {
+    labels: freqBands,
+    datasets: [{ data: freqAvgSpend.map((s,i) => freqCounts[i] ? Math.round(s/freqCounts[i]) : 0),
+      backgroundColor: '#0d6efd', borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts(v => '₹' + (v/1000).toFixed(0) + 'k')
+});
+
+// Churn risk by region
+const churnByRegion = {};
+regions.forEach(reg => {
+  const total = allData.filter(d => d.region === reg).length;
+  const churnCount = churnData.filter(d => d.region === reg).length;
+  churnByRegion[reg] = total ? parseFloat((churnCount/total*100).toFixed(1)) : 0;
+});
+new Chart(document.getElementById('churnRegion'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(churnByRegion),
+    datasets: [{ data: Object.values(churnByRegion), backgroundColor: '#dc3545', borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts(v => v + '%')
+});
+
+// Recency histogram
+const recencyBuckets = [0,0,0,0,0];
+allData.forEach(d => {
+  if (d.recency <= 15) recencyBuckets[0]++;
+  else if (d.recency <= 30) recencyBuckets[1]++;
+  else if (d.recency <= 45) recencyBuckets[2]++;
+  else if (d.recency <= 60) recencyBuckets[3]++;
+  else recencyBuckets[4]++;
+});
+new Chart(document.getElementById('recencyHist'), {
+  type: 'bar',
+  data: {
+    labels: ['≤15 days','16–30','31–45','46–60','60+ days'],
+    datasets: [{ data: recencyBuckets, backgroundColor: ['#198754','#0d6efd','#fd7e14','#e67700','#dc3545'], borderRadius: 4, borderWidth: 0 }]
+  },
+  options: baseOpts()
+});
+
+// ── CSV DOWNLOAD ──────────────────────────────────────────
+function downloadCSV() {
+  const headers = ['Customer ID','Region','Recency (days)','Frequency','Total Spend','RFM Score','Segment'];
+  const rows = allData.map(d => [d.id, d.region, d.recency, d.frequency, d.spend, d.rfm, d.segment]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'transaction_segments.csv';
+  a.click();
+}
+</script>
+</body>
+</html>

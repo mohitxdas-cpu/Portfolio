@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crude Oil Balance Sheet & Price Forecast Model</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  color: #222;
+  font-size: 14px;
+}
+
+/* HEADER */
+.header {
+  background: #fff;
+  border-bottom: 2px solid #1a5fa8;
+  padding: 24px 32px 20px;
+}
+
+.header h1 {
+  font-size: 22px;
+  font-weight: bold;
+  color: #1a5fa8;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: #555;
+  font-size: 13px;
+  margin-bottom: 14px;
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 12px;
+  color: #555;
+}
+
+.header-meta span strong {
+  color: #222;
+}
+
+/* LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  padding: 16px 32px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* MAIN COLUMN */
+.main-col {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* TABS */
+.tab-bar {
+  display: flex;
+  border-bottom: 2px solid #ddd;
+  background: #f9f9f9;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.tab:hover { color: #1a5fa8; }
+.tab.active { color: #1a5fa8; border-bottom-color: #1a5fa8; font-weight: bold; }
+
+/* PANELS */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* FORMULA BAR */
+.formula-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #f0f4fa;
+  border-bottom: 1px solid #ddd;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #333;
+}
+
+.cell-ref {
+  background: #fff;
+  border: 1px solid #bbb;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #1a5fa8;
+  min-width: 50px;
+  text-align: center;
+}
+
+.fx { color: #888; }
+.formula-text { color: #0a6b50; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  padding: 9px 12px;
+  text-align: left;
+  background: #f0f4fa;
+  border-bottom: 2px solid #c8d8ec;
+  color: #333;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+thead th.r { text-align: right; }
+
+tbody tr { border-bottom: 1px solid #eee; }
+tbody tr:hover { background: #fafcff; }
+
+tbody tr.group-row td {
+  background: #f0f4fa;
+  color: #1a5fa8;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 5px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 8px 12px;
+  color: #444;
+  white-space: nowrap;
+}
+
+td.country { color: #222; font-weight: 500; }
+td.r { text-align: right; }
+td.num { text-align: right; color: #2255aa; }
+td.pos { text-align: right; color: #1a8040; font-weight: 500; }
+td.neg { text-align: right; color: #c0392b; font-weight: 500; }
+td.total { font-weight: bold; }
+
+.risk-low  { color: #1a8040; }
+.risk-med  { color: #d07000; }
+.risk-high { color: #c0392b; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.badge-opec    { background: #fff3e0; color: #c07010; border: 1px solid #f0c060; }
+.badge-nonopec { background: #e8f0fc; color: #1a5fa8; border: 1px solid #b0cce8; }
+
+/* CHART SECTION */
+.section {
+  padding: 20px 24px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.section-sub {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 16px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #555;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.chart-box {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+svg.main-chart {
+  width: 100%;
+  min-width: 500px;
+  height: 220px;
+  display: block;
+}
+
+/* SCENARIO SECTION */
+.scenario-desc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.control-box {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.control-label {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type=range] {
+  flex: 1;
+  height: 4px;
+  accent-color: #1a5fa8;
+  cursor: pointer;
+}
+
+.slider-val {
+  font-size: 13px;
+  font-weight: bold;
+  color: #1a5fa8;
+  min-width: 60px;
+  text-align: right;
+}
+
+.scenario-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.s-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+  border-top: 4px solid #ccc;
+}
+
+.s-card.bull { border-top-color: #1a8040; }
+.s-card.base { border-top-color: #d07000; }
+.s-card.bear { border-top-color: #c0392b; }
+
+.s-label {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.s-card.bull .s-label { color: #1a8040; }
+.s-card.base .s-label { color: #d07000; }
+.s-card.bear .s-label { color: #c0392b; }
+
+.s-price {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.s-card.bull .s-price { color: #1a8040; }
+.s-card.base .s-price { color: #d07000; }
+.s-card.bear .s-price { color: #c0392b; }
+
+.s-range { font-size: 11px; color: #888; margin-bottom: 8px; }
+.s-desc  { font-size: 12px; color: #555; line-height: 1.5; }
+
+.prob-box {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.prob-title { font-size: 12px; color: #777; margin-bottom: 12px; font-weight: bold; text-transform: uppercase; }
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.prob-label { font-size: 12px; color: #444; width: 60px; flex-shrink: 0; }
+
+.prob-track {
+  flex: 1;
+  height: 16px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.prob-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.prob-pct { font-size: 12px; font-weight: bold; width: 40px; text-align: right; flex-shrink: 0; }
+
+.bias-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+  font-size: 13px;
+}
+
+.bias-label { font-weight: bold; color: #333; width: 60px; flex-shrink: 0; }
+
+/* FORMULAS TAB */
+td.formula-cell { font-family: 'Courier New', monospace; font-size: 11px; color: #0a6b50; }
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.sheet-box {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 14px;
+  background: #f9f9f9;
+}
+
+.sheet-num { font-size: 10px; color: #1a5fa8; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; }
+.sheet-name { font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+.sheet-desc { font-size: 11px; color: #666; line-height: 1.5; }
+
+/* SIDEBAR */
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.side-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.side-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kpi {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.kpi-label { font-size: 10px; color: #888; margin-bottom: 4px; }
+.kpi-val { font-size: 18px; font-weight: bold; line-height: 1; }
+.kpi-val.blue  { color: #1a5fa8; }
+.kpi-val.red   { color: #c0392b; }
+.kpi-val.amber { color: #d07000; }
+.kpi-val.green { color: #1a8040; }
+.kpi-sub { font-size: 10px; color: #999; margin-top: 2px; }
+
+/* donut */
+.donut-wrap { display: flex; align-items: center; gap: 14px; }
+svg.donut { flex-shrink: 0; }
+.donut-legend { flex: 1; }
+.dl-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+.dl-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #444; }
+.dl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dl-val { font-size: 12px; font-weight: bold; color: #222; }
+
+/* Top producers */
+.rank-list { list-style: none; }
+.rank-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+.rank-num { font-size: 11px; color: #aaa; width: 14px; flex-shrink: 0; }
+.rank-country { flex: 1; font-size: 12px; color: #333; }
+.rank-bar-wrap { width: 60px; height: 5px; background: #e8e8e8; border-radius: 3px; overflow: hidden; }
+.rank-bar { height: 100%; border-radius: 3px; background: #1a5fa8; }
+.rank-val { font-size: 11px; font-weight: bold; color: #222; width: 38px; text-align: right; flex-shrink: 0; }
+
+/* Methodology */
+.method-list { list-style: none; }
+.method-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  color: #444;
+  display: flex;
+  gap: 8px;
+  line-height: 1.5;
+}
+.method-item::before { content: '→'; color: #1a5fa8; flex-shrink: 0; }
+
+/* Skill chips */
+.chip-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #444;
+  background: #f5f5f5;
+}
+.chip.hi { background: #e8f0fc; border-color: #b0cce8; color: #1a5fa8; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid #ddd;
+  padding: 14px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  font-size: 12px;
+  color: #777;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer-name { font-weight: bold; color: #1a5fa8; font-size: 13px; }
+
+/* Responsive */
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; padding: 12px 16px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .scenario-cards { grid-template-columns: 1fr; }
+  .sheet-grid { grid-template-columns: 1fr 1fr; }
+  .header { padding: 16px 18px; }
+  footer { padding: 12px 18px; }
+}
+</style>
+
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+function updateScenario() {
+  const cut    = parseFloat(document.getElementById('cut-slider').value);
+  const demand = parseFloat(document.getElementById('demand-slider').value);
+  const geo    = parseFloat(document.getElementById('geo-slider').value);
+  const supply = parseFloat(document.getElementById('supply-slider').value);
+
+  document.getElementById('cut-val').textContent    = cut.toFixed(1) + ' mb/d';
+  document.getElementById('demand-val').textContent = (demand >= 0 ? '+' : '') + demand.toFixed(1) + ' mb/d';
+  document.getElementById('geo-val').textContent    = '$' + geo;
+  document.getElementById('supply-val').textContent = '+' + supply.toFixed(1) + ' mb/d';
+
+  const BASE = 83;
+  const bullPrice = Math.round(BASE + cut * 8.5 + geo + Math.max(0, demand) * 3.2 - supply * 2);
+  const basePrice = Math.round(BASE + cut * 4   + geo * 0.4 + demand * 2 - supply * 1.5);
+  const bearPrice = Math.round(BASE - Math.max(0,-demand) * 6 - supply * 4.5 + cut * 1.5);
+
+  document.getElementById('bull-price').textContent = '$' + bullPrice;
+  document.getElementById('base-price').textContent = '$' + basePrice;
+  document.getElementById('bear-price').textContent = '$' + Math.max(40, bearPrice);
+
+  document.getElementById('bull-range').textContent = 'Range: $' + (bullPrice-5) + ' – $' + (bullPrice+9);
+  document.getElementById('base-range').textContent = 'Range: $' + (basePrice-4) + ' – $' + (basePrice+5);
+  document.getElementById('bear-range').textContent = 'Range: $' + Math.max(40,bearPrice-6) + ' – $' + (bearPrice+6);
+
+  const bullProb = Math.min(98, Math.max(15, Math.round(50 + cut*18 + geo*1.5 + Math.max(0,demand)*4 - supply*10)));
+  const bearProb = Math.min(90, Math.max(5,  Math.round(40 - cut*12 + supply*10 - demand*8)));
+  const baseProb = Math.min(90, Math.max(20, Math.round(60 - Math.abs(cut*7) - supply*3)));
+
+  document.getElementById('bull-bar').style.width  = bullProb + '%';
+  document.getElementById('base-bar').style.width  = baseProb + '%';
+  document.getElementById('bear-bar').style.width  = bearProb + '%';
+  document.getElementById('bull-pct').textContent  = bullProb + '%';
+  document.getElementById('base-pct').textContent  = baseProb + '%';
+  document.getElementById('bear-pct').textContent  = bearProb + '%';
+
+  document.getElementById('bias-price').textContent = '$' + basePrice;
+
+  let bias = '';
+  if (bullProb > 70)      bias = '<span style="color:#1a8040;font-weight:bold">BULLISH — Strong Upside</span>';
+  else if (bullProb > 55) bias = '<span style="color:#1a8040">MILD BULLISH — Moderate Upside</span>';
+  else if (bearProb > 60) bias = '<span style="color:#c0392b;font-weight:bold">BEARISH — Downside Risk</span>';
+  else if (bearProb > 40) bias = '<span style="color:#c0392b">MILD BEARISH — Limited Upside</span>';
+  else                    bias = '<span style="color:#d07000">NEUTRAL — Balanced Risk</span>';
+  document.getElementById('model-bias').innerHTML = bias;
+}
+</script>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Crude Oil Balance Sheet &amp; Price Forecast Model</h1>
+  <p style="font-size:12px;color:#888;margin-bottom:8px;">Data compiled manually from IEA, EIA and OPEC reports. Model simplified into a country-level supply–demand balance in Excel.</p>
+  <p>A country-level supply-demand model integrating OPEC and non-OPEC production, consumption, imports, and exports — with scenario analysis and price bias output.</p>
+  <div class="header-meta">
+    <span><strong>Author:</strong> Mohit Das</span>
+    <span><strong>Tool:</strong> Microsoft Excel</span>
+    <span><strong>Period:</strong> Dec 2025 – Jan 2026</span>
+    <span><strong>Scope:</strong> Short &amp; Medium Term</span>
+    <span><strong>Countries:</strong> 12 modelled</span>
+    <span><strong>Course:</strong> MSc Economics</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- MAIN COLUMN -->
+  <div class="main-col">
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('balance', this)">Balance Sheet</button>
+      <button class="tab" onclick="switchTab('chart', this)">Supply / Demand Chart</button>
+      <button class="tab" onclick="switchTab('scenario', this)">Scenario Analysis</button>
+      <button class="tab" onclick="switchTab('formulas', this)">Excel Formulas</button>
+    </div>
+
+    <!-- BALANCE SHEET -->
+    <div class="panel active" id="tab-balance">
+      <div class="formula-bar">
+        <span class="cell-ref">G14</span>
+        <span class="fx">ƒx</span>
+        <span class="formula-text">=SUMIF(B$2:B$13,"OPEC",F$2:F$13)</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Group</th>
+              <th class="r">Production<br><small>(mb/d)</small></th>
+              <th class="r">Consumption<br><small>(mb/d)</small></th>
+              <th class="r">Imports<br><small>(mb/d)</small></th>
+              <th class="r">Exports<br><small>(mb/d)</small></th>
+              <th class="r">Net Balance<br><small>(mb/d)</small></th>
+              <th>Demand Risk</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><td colspan="8">OPEC Members</td></tr>
+            <tr>
+              <td class="country">Saudi Arabia</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">10.84</td><td class="num">3.34</td><td class="num">0.00</td><td class="num">7.45</td>
+              <td class="pos">+7.45</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">Iraq</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">4.25</td><td class="num">0.79</td><td class="num">0.00</td><td class="num">3.43</td>
+              <td class="pos">+3.43</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">UAE</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">4.08</td><td class="num">0.98</td><td class="num">0.00</td><td class="num">2.97</td>
+              <td class="pos">+2.97</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">Kuwait</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">2.65</td><td class="num">0.48</td><td class="num">0.00</td><td class="num">2.17</td>
+              <td class="pos">+2.17</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">Iran</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">3.20</td><td class="num">1.85</td><td class="num">0.00</td><td class="num">1.12</td>
+              <td class="pos">+1.12</td><td class="risk-high">High</td>
+            </tr>
+            <tr>
+              <td class="country">Venezuela</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num">0.82</td><td class="num">0.51</td><td class="num">0.04</td><td class="num">0.32</td>
+              <td class="pos">+0.32</td><td class="risk-high">High</td>
+            </tr>
+            <tr class="group-row"><td colspan="8">Non-OPEC Producers</td></tr>
+            <tr>
+              <td class="country">United States</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">13.24</td><td class="num">20.10</td><td class="num">6.49</td><td class="num">3.90</td>
+              <td class="neg">−3.27</td><td class="risk-med">Medium</td>
+            </tr>
+            <tr>
+              <td class="country">Russia</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">9.78</td><td class="num">3.85</td><td class="num">0.00</td><td class="num">5.76</td>
+              <td class="pos">+5.76</td><td class="risk-high">High</td>
+            </tr>
+            <tr>
+              <td class="country">Canada</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">5.61</td><td class="num">2.30</td><td class="num">0.58</td><td class="num">3.82</td>
+              <td class="pos">+3.82</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">China</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">4.10</td><td class="num">16.20</td><td class="num">10.20</td><td class="num">0.82</td>
+              <td class="neg">−11.72</td><td class="risk-high">High</td>
+            </tr>
+            <tr>
+              <td class="country">Norway</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">1.97</td><td class="num">0.24</td><td class="num">0.01</td><td class="num">1.73</td>
+              <td class="pos">+1.73</td><td class="risk-low">Low</td>
+            </tr>
+            <tr>
+              <td class="country">India</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num">0.75</td><td class="num">5.43</td><td class="num">4.68</td><td class="num">0.07</td>
+              <td class="neg">−4.61</td><td class="risk-med">Medium</td>
+            </tr>
+            <tr class="group-row"><td colspan="8">Aggregated Totals (Excel SUMIF)</td></tr>
+            <tr>
+              <td class="country total">=SUMIF Group: "OPEC"</td>
+              <td><span class="badge badge-opec">OPEC</span></td>
+              <td class="num total">25.84</td><td class="num total">7.95</td>
+              <td class="num total">0.04</td><td class="num total">17.46</td>
+              <td class="pos total">+17.46</td><td class="risk-low total">Net Surplus</td>
+            </tr>
+            <tr>
+              <td class="country total">=SUMIF Group: "Non-OPEC"</td>
+              <td><span class="badge badge-nonopec">Non-OPEC</span></td>
+              <td class="num total">35.45</td><td class="num total">48.12</td>
+              <td class="num total">21.96</td><td class="num total">16.10</td>
+              <td class="neg total">−14.05</td><td class="risk-high total">Net Deficit</td>
+            </tr>
+            <tr style="background:#f0f4fa">
+              <td class="country total" style="color:#1a5fa8">GLOBAL TOTAL</td>
+              <td>—</td>
+              <td class="num total" style="color:#1a5fa8">61.29</td>
+              <td class="num total" style="color:#1a5fa8">56.07</td>
+              <td class="num total" style="color:#1a5fa8">22.00</td>
+              <td class="num total" style="color:#1a5fa8">33.56</td>
+              <td class="pos total" style="color:#1a5fa8">+5.22</td>
+              <td class="total" style="color:#d07000">Surplus → Bearish</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /balance -->
+
+    <!-- CHART TAB -->
+    <div class="panel" id="tab-chart">
+      <div class="section">
+        <div class="section-title">Global Supply vs. Demand (Quarterly)</div>
+        <div class="section-sub">mb/d — Historical + Short-Term Forecast (Q1F–Q3F 2025)</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div> Supply</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div> Demand</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div> Price (USD/bbl)</div>
+        </div>
+        <div class="chart-box">
+          <svg class="main-chart" viewBox="0 0 700 220" preserveAspectRatio="xMidYMid meet">
+            <!-- Grid lines -->
+            <line x1="60" y1="20"  x2="680" y2="20"  stroke="#ddd" stroke-width="1"/>
+            <line x1="60" y1="60"  x2="680" y2="60"  stroke="#ddd" stroke-width="1"/>
+            <line x1="60" y1="100" x2="680" y2="100" stroke="#ddd" stroke-width="1"/>
+            <line x1="60" y1="140" x2="680" y2="140" stroke="#ddd" stroke-width="1"/>
+            <line x1="60" y1="180" x2="680" y2="180" stroke="#ddd" stroke-width="1"/>
+
+            <!-- Y-axis labels -->
+            <text x="54" y="24"  text-anchor="end" font-family="Arial" font-size="9" fill="#999">105</text>
+            <text x="54" y="64"  text-anchor="end" font-family="Arial" font-size="9" fill="#999">100</text>
+            <text x="54" y="104" text-anchor="end" font-family="Arial" font-size="9" fill="#999">95</text>
+            <text x="54" y="144" text-anchor="end" font-family="Arial" font-size="9" fill="#999">90</text>
+            <text x="54" y="184" text-anchor="end" font-family="Arial" font-size="9" fill="#999">85</text>
+
+            <!-- X labels -->
+            <text x="107" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q1'24</text>
+            <text x="197" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q2'24</text>
+            <text x="287" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q3'24</text>
+            <text x="377" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q4'24</text>
+            <text x="467" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q1F'25</text>
+            <text x="557" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q2F'25</text>
+            <text x="647" y="205" text-anchor="middle" font-family="Arial" font-size="9" fill="#999">Q3F'25</text>
+
+            <!-- Forecast divider -->
+            <line x1="422" y1="15" x2="422" y2="185" stroke="#f39c12" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
+            <text x="426" y="26" font-family="Arial" font-size="8" fill="#f39c12">FORECAST →</text>
+
+            <!-- Supply line -->
+            <polyline points="107,88 197,72 287,100 377,116 467,92 557,80 647,96"
+              fill="none" stroke="#2ecc71" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="107" cy="88"  r="4" fill="#2ecc71"/>
+            <circle cx="197" cy="72"  r="4" fill="#2ecc71"/>
+            <circle cx="287" cy="100" r="4" fill="#2ecc71"/>
+            <circle cx="377" cy="116" r="4" fill="#2ecc71"/>
+            <circle cx="467" cy="92"  r="4" fill="none" stroke="#2ecc71" stroke-width="2"/>
+            <circle cx="557" cy="80"  r="4" fill="none" stroke="#2ecc71" stroke-width="2"/>
+            <circle cx="647" cy="96"  r="4" fill="none" stroke="#2ecc71" stroke-width="2"/>
+
+            <!-- Demand line -->
+            <polyline points="107,96 197,88 287,84 377,76 467,80 557,72 647,68"
+              fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="107" cy="96" r="4" fill="#e74c3c"/>
+            <circle cx="197" cy="88" r="4" fill="#e74c3c"/>
+            <circle cx="287" cy="84" r="4" fill="#e74c3c"/>
+            <circle cx="377" cy="76" r="4" fill="#e74c3c"/>
+            <circle cx="467" cy="80" r="4" fill="none" stroke="#e74c3c" stroke-width="2"/>
+            <circle cx="557" cy="72" r="4" fill="none" stroke="#e74c3c" stroke-width="2"/>
+            <circle cx="647" cy="68" r="4" fill="none" stroke="#e74c3c" stroke-width="2"/>
+
+            <!-- Price bars -->
+            <rect x="95"  y="128" width="24" height="52" fill="#f39c12" opacity="0.2" rx="2"/>
+            <rect x="185" y="112" width="24" height="68" fill="#f39c12" opacity="0.2" rx="2"/>
+            <rect x="275" y="108" width="24" height="72" fill="#f39c12" opacity="0.2" rx="2"/>
+            <rect x="365" y="120" width="24" height="60" fill="#f39c12" opacity="0.2" rx="2"/>
+            <rect x="455" y="116" width="24" height="64" fill="#f39c12" opacity="0.12" rx="2" stroke="#f39c12" stroke-dasharray="2 2"/>
+            <rect x="545" y="124" width="24" height="56" fill="#f39c12" opacity="0.12" rx="2" stroke="#f39c12" stroke-dasharray="2 2"/>
+            <rect x="635" y="104" width="24" height="76" fill="#f39c12" opacity="0.12" rx="2" stroke="#f39c12" stroke-dasharray="2 2"/>
+
+            <!-- Price labels -->
+            <text x="107" y="125" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000">$81</text>
+            <text x="197" y="109" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000">$85</text>
+            <text x="287" y="105" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000">$87</text>
+            <text x="377" y="117" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000">$83</text>
+            <text x="467" y="113" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000" opacity="0.8">$84</text>
+            <text x="557" y="121" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000" opacity="0.8">$82</text>
+            <text x="647" y="101" text-anchor="middle" font-family="Arial" font-size="8.5" fill="#d07000" opacity="0.8">$88</text>
+          </svg>
+        </div>
+
+        <!-- Net balance summary -->
+        <div style="background:#f9f9f9;border:1px solid #ddd;border-radius:4px;padding:14px;margin-top:4px">
+          <div style="font-size:12px;font-weight:bold;color:#555;text-transform:uppercase;margin-bottom:10px">Quarterly Net Balance Summary (mb/d)</div>
+          <table style="font-size:12px">
+            <thead>
+              <tr>
+                <th>Quarter</th>
+                <th class="r">Supply</th>
+                <th class="r">Demand</th>
+                <th class="r">Net Balance</th>
+                <th class="r">Brent Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Q1 2024</td><td class="num">100.8</td><td class="num">101.2</td><td class="neg">−0.4</td><td class="num">$81</td><td class="risk-med">Mild Deficit</td></tr>
+              <tr><td>Q2 2024</td><td class="num">102.4</td><td class="num">102.8</td><td class="neg">−0.4</td><td class="num">$85</td><td class="risk-med">Mild Deficit</td></tr>
+              <tr><td>Q3 2024</td><td class="num">101.6</td><td class="num">103.0</td><td class="neg">−1.4</td><td class="num">$87</td><td class="risk-high">Deficit</td></tr>
+              <tr><td>Q4 2024</td><td class="num">101.0</td><td class="num">103.4</td><td class="neg">−2.4</td><td class="num">$83</td><td class="risk-high">Deficit</td></tr>
+              <tr><td style="color:#d07000">Q1F 2025</td><td class="num" style="color:#d07000">102.8</td><td class="num" style="color:#d07000">103.5</td><td class="neg" style="color:#d07000">−0.7</td><td class="num" style="color:#d07000">$84</td><td style="color:#d07000">Mild Deficit</td></tr>
+              <tr><td style="color:#d07000">Q2F 2025</td><td class="num" style="color:#d07000">103.6</td><td class="num" style="color:#d07000">103.9</td><td class="neg" style="color:#d07000">−0.3</td><td class="num" style="color:#d07000">$82</td><td style="color:#d07000">Balanced</td></tr>
+              <tr><td style="color:#d07000">Q3F 2025</td><td class="num" style="color:#d07000">102.2</td><td class="num" style="color:#d07000">104.4</td><td class="neg" style="color:#d07000">−2.2</td><td class="num" style="color:#d07000">$88</td><td style="color:#d07000">Deficit</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /chart -->
+
+    <!-- SCENARIO TAB -->
+    <div class="panel" id="tab-scenario">
+      <div class="section">
+        <div class="section-title">Scenario Analysis</div>
+        <p class="scenario-desc">This framework stress-tests price outcomes under three market conditions. Adjust the sliders to simulate how production cuts or demand changes affect the price bias.</p>
+
+        <div class="controls-grid">
+          <div class="control-box">
+            <span class="control-label">OPEC+ Production Cut (mb/d)</span>
+            <div class="slider-row">
+              <input type="range" min="0" max="3" step="0.1" value="0" id="cut-slider" oninput="updateScenario()">
+              <span class="slider-val" id="cut-val">0.0 mb/d</span>
+            </div>
+          </div>
+          <div class="control-box">
+            <span class="control-label">Global Demand Growth (mb/d)</span>
+            <div class="slider-row">
+              <input type="range" min="-2" max="3" step="0.1" value="1" id="demand-slider" oninput="updateScenario()">
+              <span class="slider-val" id="demand-val">+1.0 mb/d</span>
+            </div>
+          </div>
+          <div class="control-box">
+            <span class="control-label">Geopolitical Risk Premium (USD)</span>
+            <div class="slider-row">
+              <input type="range" min="0" max="20" step="1" value="0" id="geo-slider" oninput="updateScenario()">
+              <span class="slider-val" id="geo-val">$0</span>
+            </div>
+          </div>
+          <div class="control-box">
+            <span class="control-label">Non-OPEC Supply Increase (mb/d)</span>
+            <div class="slider-row">
+              <input type="range" min="0" max="3" step="0.1" value="0.5" id="supply-slider" oninput="updateScenario()">
+              <span class="slider-val" id="supply-val">+0.5 mb/d</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-cards">
+          <div class="s-card bull">
+            <div class="s-label">🐂 Bullish Case</div>
+            <div class="s-price" id="bull-price">$95</div>
+            <div class="s-range" id="bull-range">Range: $90 – $104</div>
+            <div class="s-desc">OPEC+ cut + geopolitical premium drives a supply shortfall. Demand remains resilient.</div>
+          </div>
+          <div class="s-card base">
+            <div class="s-label">⚖ Base Case</div>
+            <div class="s-price" id="base-price">$83</div>
+            <div class="s-range" id="base-range">Range: $79 – $88</div>
+            <div class="s-desc">Current OPEC output maintained with moderate demand growth. Market rebalances gradually.</div>
+          </div>
+          <div class="s-card bear">
+            <div class="s-label">🐻 Bearish Case</div>
+            <div class="s-price" id="bear-price">$64</div>
+            <div class="s-range" id="bear-range">Range: $58 – $70</div>
+            <div class="s-desc">Demand slowdown combined with increased non-OPEC supply overwhelms the market.</div>
+          </div>
+        </div>
+
+        <div class="prob-box">
+          <div class="prob-title">Price Probability Distribution — Dynamic Output</div>
+          <div class="prob-row">
+            <span class="prob-label">Bullish</span>
+            <div class="prob-track"><div class="prob-fill" id="bull-bar" style="width:82%;background:#2ecc71"></div></div>
+            <span class="prob-pct" id="bull-pct" style="color:#1a8040">82%</span>
+          </div>
+          <div class="prob-row">
+            <span class="prob-label">Base</span>
+            <div class="prob-track"><div class="prob-fill" id="base-bar" style="width:55%;background:#f39c12"></div></div>
+            <span class="prob-pct" id="base-pct" style="color:#d07000">55%</span>
+          </div>
+          <div class="prob-row">
+            <span class="prob-label">Bearish</span>
+            <div class="prob-track"><div class="prob-fill" id="bear-bar" style="width:30%;background:#e74c3c"></div></div>
+            <span class="prob-pct" id="bear-pct" style="color:#c0392b">30%</span>
+          </div>
+          <div class="bias-row">
+            <span class="bias-label">Model Bias</span>
+            <span id="model-bias" style="flex:1;font-size:13px"><span style="color:#d07000">NEUTRAL — Moderate Upside</span></span>
+            <span id="bias-price" style="font-weight:bold;color:#1a5fa8;font-size:14px">$83</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /scenario -->
+
+    <!-- FORMULAS TAB -->
+    <div class="panel" id="tab-formulas">
+      <div class="section">
+        <div class="section-title">Key Excel Formulas Used</div>
+        <div class="section-sub">Annotated formula reference from the model workbook</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cell Ref</th>
+                <th>Formula</th>
+                <th>Purpose</th>
+                <th>Sheet</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="formula-cell">G14</td>
+                <td class="formula-cell">=SUMIF(B$2:B$13,"OPEC",F$2:F$13)</td>
+                <td>Sum exports for OPEC countries only</td>
+                <td><span class="badge badge-opec">Balance</span></td>
+              </tr>
+              <tr>
+                <td class="formula-cell">G15</td>
+                <td class="formula-cell">=SUMIFS(F$2:F$13,B$2:B$13,"Non-OPEC")</td>
+                <td>Sum exports for Non-OPEC countries</td>
+                <td><span class="badge badge-nonopec">Balance</span></td>
+              </tr>
+              <tr>
+                <td class="formula-cell">H2</td>
+                <td class="formula-cell">=IF(G2>0,"Surplus","Deficit")</td>
+                <td>Auto-classify country balance position</td>
+                <td>Balance</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">C16</td>
+                <td class="formula-cell">=XLOOKUP("Base Case",A$20:A$22,C$20:C$22)</td>
+                <td>Pull base case price from scenario table</td>
+                <td>Dashboard</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">D2:D13</td>
+                <td class="formula-cell">=XLOOKUP(A2,RawData!A:A,RawData!D:D,0)</td>
+                <td>Fetch consumption data from raw data sheet</td>
+                <td>Balance</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">I2</td>
+                <td class="formula-cell">=IF(G2>2,"Low",IF(G2>0,"Med","High"))</td>
+                <td>Risk bucket based on net balance threshold</td>
+                <td>Balance</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">J2</td>
+                <td class="formula-cell">=SUMPRODUCT((B$2:B$13="OPEC")*(G$2:G$13))</td>
+                <td>Weighted OPEC net position calculation</td>
+                <td>Balance</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">K5</td>
+                <td class="formula-cell">=C$14+ScenarioCut-SupplyIncrease</td>
+                <td>Scenario-adjusted total supply output</td>
+                <td>Scenarios</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">Price_Bull</td>
+                <td class="formula-cell">=Base_Price+(CutImpact*8.5)+GeoPremium</td>
+                <td>Bullish price derivation formula</td>
+                <td>Scenarios</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">Price_Bear</td>
+                <td class="formula-cell">=Base_Price-(DemandDrop*6.2)-(SupplyGlut*4.1)</td>
+                <td>Bearish price derivation formula</td>
+                <td>Scenarios</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">PivotSum</td>
+                <td class="formula-cell">Pivot: Row=Group, Value=SUM(Production)</td>
+                <td>OPEC vs Non-OPEC production aggregation</td>
+                <td>Pivot</td>
+              </tr>
+              <tr>
+                <td class="formula-cell">Dashboard</td>
+                <td class="formula-cell">=IFERROR(XLOOKUP(Scenario,A:A,F:F),Base_Price)</td>
+                <td>Error-safe scenario price lookup for dashboard</td>
+                <td>Dashboard</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sheet-grid" style="margin-top:20px">
+          <div class="sheet-box">
+            <div class="sheet-num">Sheet 1</div>
+            <div class="sheet-name">Raw Data</div>
+            <div class="sheet-desc">Country production, consumption, import and export data from IEA / EIA / OPEC sources</div>
+          </div>
+          <div class="sheet-box">
+            <div class="sheet-num">Sheet 2</div>
+            <div class="sheet-name">Balance Sheet</div>
+            <div class="sheet-desc">XLOOKUP-linked calculations, net balance, risk classification, SUMIF aggregations</div>
+          </div>
+          <div class="sheet-box">
+            <div class="sheet-num">Sheet 3</div>
+            <div class="sheet-name">Scenario Engine</div>
+            <div class="sheet-desc">Bull / Base / Bear price derivation with named range inputs and IF logic</div>
+          </div>
+          <div class="sheet-box">
+            <div class="sheet-num">Sheet 4</div>
+            <div class="sheet-name">Dashboard</div>
+            <div class="sheet-desc">Charts, KPIs, scenario output, price bias signal for management reporting</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /formulas -->
+  </div><!-- /main-col -->
+
+  <!-- SIDEBAR -->
+  <div class="side-col">
+
+    <!-- KPIs -->
+    <div class="side-box">
+      <div class="side-title">Market KPIs (2024 Avg)</div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Global Supply</div>
+          <div class="kpi-val blue">102.4</div>
+          <div class="kpi-sub">mb/d</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Global Demand</div>
+          <div class="kpi-val red">103.1</div>
+          <div class="kpi-sub">mb/d</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Net Balance</div>
+          <div class="kpi-val red">−0.7</div>
+          <div class="kpi-sub">mb/d deficit</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Brent Price</div>
+          <div class="kpi-val amber">$83.4</div>
+          <div class="kpi-sub">USD/bbl avg</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">OPEC Share</div>
+          <div class="kpi-val green">42.1%</div>
+          <div class="kpi-sub">of global supply</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Price Bias</div>
+          <div class="kpi-val amber">Neutral</div>
+          <div class="kpi-sub">base scenario</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supply Mix -->
+    <div class="side-box">
+      <div class="side-title">Supply Mix</div>
+      <div class="donut-wrap">
+        <svg class="donut" width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="28" fill="none" stroke="#e8e8e8" stroke-width="14"/>
+          <circle cx="40" cy="40" r="28" fill="none" stroke="#1a5fa8" stroke-width="14"
+            stroke-dasharray="101.8 175.9" transform="rotate(-90 40 40)" opacity="0.8"/>
+          <circle cx="40" cy="40" r="28" fill="none" stroke="#d07000" stroke-width="14"
+            stroke-dasharray="75.9 201.8" stroke-dashoffset="-101.8" transform="rotate(-90 40 40)"/>
+          <text x="40" y="44" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" fill="#444">mb/d</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-row">
+            <div class="dl-label"><div class="dl-dot" style="background:#d07000"></div>OPEC</div>
+            <div class="dl-val">25.84</div>
+          </div>
+          <div class="dl-row">
+            <div class="dl-label"><div class="dl-dot" style="background:#1a5fa8"></div>Non-OPEC</div>
+            <div class="dl-val">35.45</div>
+          </div>
+          <div class="dl-row" style="border-bottom:none">
+            <div class="dl-label" style="color:#888">Total Modelled</div>
+            <div class="dl-val">61.29</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Producers -->
+    <div class="side-box">
+      <div class="side-title">Top Producers (mb/d)</div>
+      <ul class="rank-list">
+        <li class="rank-item">
+          <span class="rank-num">1</span>
+          <span class="rank-country">United States</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:100%;background:#1a5fa8"></div></div>
+          <span class="rank-val">13.24</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">2</span>
+          <span class="rank-country">Saudi Arabia</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:82%;background:#d07000"></div></div>
+          <span class="rank-val">10.84</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">3</span>
+          <span class="rank-country">Russia</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:74%;background:#1a5fa8;opacity:0.7"></div></div>
+          <span class="rank-val">9.78</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">4</span>
+          <span class="rank-country">Canada</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:42%;background:#1a5fa8;opacity:0.5"></div></div>
+          <span class="rank-val">5.61</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">5</span>
+          <span class="rank-country">Iraq</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:32%;background:#d07000;opacity:0.7"></div></div>
+          <span class="rank-val">4.25</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">6</span>
+          <span class="rank-country">UAE</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:31%;background:#d07000;opacity:0.6"></div></div>
+          <span class="rank-val">4.08</span>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num">7</span>
+          <span class="rank-country">China</span>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:31%;background:#1a5fa8;opacity:0.4"></div></div>
+          <span class="rank-val">4.10</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Sources -->
+    <div class="side-box">
+      <div class="side-title">Data Sources</div>
+      <ul class="method-list">
+        <li class="method-item">IEA — Oil Market Report (monthly supply/demand estimates)</li>
+        <li class="method-item">EIA — Short-Term Energy Outlook (U.S. + global production data)</li>
+        <li class="method-item">OPEC — Monthly Oil Market Report (OPEC member output &amp; quotas)</li>
+      </ul>
+      <p style="font-size:11px;color:#999;margin-top:10px;line-height:1.5;">Note: All figures are 2024 annual averages. Minor discrepancies between sources reconciled manually.</p>
+    </div>
+
+    <!-- Methodology -->
+    <div class="side-box">
+      <div class="side-title">Methodology</div>
+      <ul class="method-list">
+        <li class="method-item">Country-level data from IEA, EIA, OPEC MOMR</li>
+        <li class="method-item">XLOOKUP links raw data to balance sheet dynamically</li>
+        <li class="method-item">SUMIF / SUMIFS aggregate by group (OPEC / Non-OPEC)</li>
+        <li class="method-item">Pivot Tables produce group-level summaries</li>
+        <li class="method-item">Scenario engine uses named ranges + IF logic</li>
+        <li class="method-item">Price bias = f(net balance, cut size, geo premium)</li>
+        <li class="method-item">Dashboard auto-updates via cell references</li>
+      </ul>
+      <p style="font-size:11px;color:#999;margin-top:10px;line-height:1.5;">Net Balance = Production + Imports − Consumption − Exports. A positive value indicates a surplus (bearish signal); negative indicates a deficit (bullish signal).</p>
+    </div>
+
+    <!-- Excel Skills -->
+    <div class="side-box">
+      <div class="side-title">Excel Skills Demonstrated</div>
+      <div class="chip-wrap">
+        <span class="chip hi">XLOOKUP</span>
+        <span class="chip hi">SUMIF</span>
+        <span class="chip hi">SUMIFS</span>
+        <span class="chip hi">IF / Nested IF</span>
+        <span class="chip hi">Pivot Tables</span>
+        <span class="chip">Named Ranges</span>
+        <span class="chip">Chart Design</span>
+        <span class="chip">Scenario Analysis</span>
+        <span class="chip">Dashboard Layout</span>
+        <span class="chip">IFERROR</span>
+        <span class="chip">SUMPRODUCT</span>
+        <span class="chip">Data Validation</span>
+      </div>
+    </div>
+
+  </div><!-- /side-col -->
+</div><!-- /layout -->
+
+<footer>
+  <span class="footer-name">Mohit Das</span>
+  <span>MSc Economics &nbsp;·&nbsp; Academic Project &nbsp;·&nbsp; Dec 2025 – Jan 2026</span>
+</footer>
+
+</body>
+</html>
