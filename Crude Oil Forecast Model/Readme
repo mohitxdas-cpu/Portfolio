@@ -1,0 +1,90 @@
+# Crude Oil Balance Sheet & Price Forecast Model
+
+**Analyst:** Mohit Das | MSc Economics, GIPE Pune  
+**Period:** Q4 2024 Actuals + 2025 Forecast  
+**Tool:** Microsoft Excel
+
+---
+
+## About
+
+This is a country-level crude oil supply-demand balance model built to
+understand global oil market dynamics and their implications for India's
+import bill. It was built the way an energy economist or commodity analyst
+would approach it — structuring actuals first, then running forward-looking
+scenarios with documented assumptions.
+
+The model answers:
+
+- Which countries are in surplus or deficit, and by how much?
+- How has the global supply-demand balance shifted across quarters?
+- What is a reasonable Brent price forecast for 2025 under bull, base,
+  and bear scenarios?
+- How sensitive is India's crude import bill to Brent price movements?
+- Are OPEC members producing within or beyond their quota?
+
+---
+
+## Data Sources
+
+**Supply-Demand Actuals:**
+- [IEA Oil Market Report (OMR)](https://www.iea.org/reports/oil-market-report-april-2025) — global supply & demand (mb/d)
+- [OPEC Monthly Oil Market Report](https://www.opec.org/opec_web/en/publications/338.htm) — member production & quota data
+- [EIA Short-Term Energy Outlook (STEO)](https://www.eia.gov/outlooks/steo/) — Q1–Q4 2024 actuals and near-term forecast
+
+**India Import Data:**
+- [PPAC — Petroleum Planning & Analysis Cell, MoP&NG](https://www.ppac.gov.in/) — India crude import volume (~4.68 mb/d, 2024)
+- RBI reference rate (USD/INR: ₹83.5) for import bill conversion
+
+**Brent Price History (for base price calibration):**
+- [EIA Spot Prices — WTI & Brent](https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm)
+- Kaggle mirror: [Historical Daily Oil and Natural Gas Prices](https://www.kaggle.com/datasets/prasertk/historical-daily-oil-and-natural-gas-prices)
+
+---
+
+## Model Structure
+
+The workbook has five sheets:
+
+| Sheet | What it contains |
+|---|---|
+| `Balance Sheet` | Country-level production, consumption, imports, exports, net balance, OPEC quota gap |
+| `Quarterly Balance & Price` | Q1–Q4 2024 actuals + forecast; Brent price by quarter; India import bill estimate |
+| `Scenario Analysis` | Bull / Base / Bear price forecast for 2025 with documented assumptions and probability weights |
+| `India Import Analysis` | Sensitivity table — how India's annual import bill (₹ lakh crore) changes at every $5 Brent move |
+| `Formula Reference` | Every key Excel formula documented with purpose and output type |
+
+---
+
+## Scenario Analysis Summary
+
+| Scenario | Forecast Price | Range | Probability | Key Driver |
+|---|---|---|---|---|
+| Bullish | $95/bbl | $90–$104 | 20% | OPEC cuts + geopolitical supply shock |
+| Base | $83/bbl | $79–$88 | 60% | Current supply-demand maintained |
+| Bearish | $64/bbl | $58–$70 | 20% | Demand slowdown + non-OPEC surge |
+
+Base case assumptions: OPEC supply 25.84 mb/d, global demand 103 mb/d,
+net balance −0.6 mb/d deficit, USD/INR at ₹83.5.
+
+---
+
+## India Import Sensitivity
+
+At $83/bbl Brent (base case), India's annual crude import bill is
+approximately **$142 billion (~₹118 lakh crore)**. A $10 increase in Brent
+adds roughly **$17 billion** to the annual bill — a significant current
+account and fiscal pressure point.
+
+---
+
+## Limitations
+
+- Production and consumption figures are based on reported IEA/OPEC data,
+  which carry revision risk.
+- Price derivation uses a simplified linear elasticity model, not a full
+  econometric specification.
+- USD/INR rate is held fixed; currency movement adds a second layer of
+  import bill sensitivity not modelled here.
+- Forecast period is 2025; model should be recalibrated as new OMR/STEO
+  data is released quarterly.
