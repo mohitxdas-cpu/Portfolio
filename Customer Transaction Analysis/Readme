@@ -19,6 +19,8 @@ The analysis treats the dataset the way a business analyst or data team would â€
 
 ## Dataset
 
+**Data Source:** [Leading Indian Bank & CIBIL Real-World Dataset](https://www.kaggle.com/datasets/saurabhbadole/leading-indian-bank-and-cibil-real-world-dataset) â€” Kaggle
+
 **File:** `Transactions.csv`  
 **Rows:** 5,000 transactions  
 **Date Range:** January 2023 â€“ December 2024  
@@ -39,7 +41,6 @@ The analysis treats the dataset the way a business analyst or data team would â€
 **Categories covered:** Electronics, Apparel, Food & Grocery, Personal Care, Books & Media, Sports, Home & Living  
 **States covered:** Maharashtra, Delhi, Karnataka, Tamil Nadu, Gujarat, West Bengal, Telangana
 
-> *Dataset name - Pan-Indian Consumer Transaction Dataset*
 
 ---
 
