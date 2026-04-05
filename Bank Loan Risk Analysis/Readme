@@ -1,0 +1,102 @@
+# Bank Loan Risk Analysis
+
+A SQL-based risk analytics project on a synthetic retail lending portfolio of 500 borrowers. Built to practice credit risk segmentation, portfolio profiling, and default analysis — skills directly relevant to BFSI and financial analytics roles.
+
+---
+
+## What This Project Does
+
+Using a single structured dataset, this project answers questions a credit risk or analytics team would actually care about:
+
+- Which borrowers are most likely to default, and why?
+- How does credit score correlate with default rates across the portfolio?
+- Which loan purposes carry the highest risk exposure?
+- How does income level affect repayment behaviour?
+- Who are the top 20 high-risk borrowers based on a computed risk score?
+
+---
+
+## Dataset
+
+**File:** `bank_loan_data.csv`  
+**Rows:** 500 borrowers  
+**Columns:**
+
+| Column | Description |
+|---|---|
+| `borrower_id` | Unique borrower identifier (BRW-XXXX) |
+| `credit_score` | FICO-style score (300–850) |
+| `annual_income` | Annual income in INR |
+| `dti_ratio` | Debt-to-income ratio (0–1) |
+| `loan_amount` | Loan amount in INR |
+| `loan_purpose` | Business / Auto / Personal / Home / Education |
+| `loan_status` | Current / Late / Default / Paid |
+| `risk_score` | Pre-assigned risk score (higher = riskier) |
+
+> *This is a synthetic dataset created for portfolio demonstration purposes.*
+
+---
+
+## SQL Analysis — Key Queries
+
+All analysis is in `Bank_Loan_Risk_Analysis.sql`. Here's what each section does:
+
+### 1. Data Validation
+Checks for nulls, out-of-range credit scores, and invalid loan/income values before any analysis begins.
+
+### 2. Portfolio Summary
+Computes total borrowers, total loan exposure (in crores), average credit score, average DTI, and overall default rate.
+
+### 3. Credit Score Segmentation
+Breaks the portfolio into four bands — Poor, Fair, Good, Excellent — and computes the default rate, average DTI, and average loan amount for each. Uses a window function to show cumulative defaults across bands.
+
+### 4. Loan Purpose Analysis
+Groups by loan purpose to identify which categories carry the highest exposure and default risk.
+
+### 5. High-Risk Borrower Identification
+Flags borrowers with credit score < 580 or DTI > 50% and ranks them using a computed risk score:
+
+```
+risk_score = (1 - (credit_score - 300) / 550) × 40 + dti_ratio × 35
+```
+
+### 6. Income Bracket Analysis
+Segments borrowers into five income bands (Low / Lower-Mid / Mid / Upper-Mid / High) and examines how default rates vary by income level.
+
+---
+
+## Sample Findings
+
+- Borrowers in the **Poor credit band (<580)** had significantly higher default rates than those in the Excellent band
+- **Business loans** carried the largest total exposure in the portfolio
+- High DTI (>50%) was a strong co-indicator of default risk even when credit scores were moderate
+- **Low-income borrowers** showed elevated default rates relative to upper-income segments
+
+---
+
+## Skills Demonstrated
+
+- MySQL DDL — table creation with constraints and indexes
+- Data loading and validation (`LOAD DATA LOCAL INFILE`)
+- Aggregation, `CASE WHEN` segmentation, and conditional counts
+- CTEs and window functions (`SUM() OVER`, `PARTITION BY`)
+- Computed risk scoring logic
+- Portfolio-level and segment-level risk analysis
+
+---
+
+## Files
+
+```
+bank-loan-risk-analysis/
+├── bank_loan_data.csv              # Raw dataset (500 rows)
+└── Bank_Loan_Risk_Analysis.sql    # All SQL queries
+```
+
+---
+
+## About
+
+Built as part of my data analytics portfolio while completing my MSc Economics at the Gokhale Institute of Politics and Economics (GIPE), Pune. The goal was to apply SQL to a realistic BFSI problem — credit risk — and demonstrate the kind of structured thinking that matters in analytics and financial roles.
+
+**Contact:** mohitxdas@gmail.com | [LinkedIn](https://linkedin.com/in/mohit-das911)
