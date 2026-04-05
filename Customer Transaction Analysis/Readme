@@ -19,9 +19,10 @@ The analysis treats the dataset the way a business analyst or data team would �
 
 ## Dataset
 
-**Data Source:** [Leading Indian Bank & CIBIL Real-World Dataset](https://www.kaggle.com/datasets/saurabhbadole/leading-indian-bank-and-cibil-real-world-dataset) — Kaggle
+**Data Source:** [Pan-Indian Consumer Transaction Dataset](https://www.kaggle.com/datasets/kumarperiya/pan-indian-consumer-transaction-dataset) — Kaggle
 
-**File:** `Transactions.csv`  
+
+**File:** `Transactions.csv
 **Rows:** 5,000 transactions  
 **Date Range:** January 2023 – December 2024  
 **Columns:**
