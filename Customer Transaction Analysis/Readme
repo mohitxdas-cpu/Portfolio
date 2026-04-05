@@ -1,14 +1,26 @@
-# Consumer Transaction Trend Analysis
+# Consumer Transaction Analysis
 
-A SQL-based retail analytics project analysing 5,000 consumer transactions across Indian cities, spanning 2023–2024. Built to practice customer segmentation, revenue trend analysis, and behavioural pattern identification — relevant to e-commerce, FMCG, fintech, and business analytics roles.
+**Analyst:** Mohit Das | MSc Economics, GIPE Pune  
+**Tool:** MySQL (analysis) 
+**Period:** January 2023 – December 2024
 
 ---
 
-## What This Project Does
+## About
 
-The analysis treats the dataset the way a business analyst or data team would — identifying revenue trends, understanding customer behaviour, and surfacing actionable patterns:
+This project analyses 5,000 retail transactions across Indian cities to
+surface patterns in revenue, customer behaviour, and product returns. The
+analysis was written in SQL and visualised as an interactive dashboard.
 
-- Which product categories drive the most revenue, and which have the highest return rates?
+The approach mirrors how a business analyst or data team would handle
+transactional data — cleaning and validating first, then answering
+business questions that drive decisions on product mix, payment
+infrastructure, and customer retention.
+
+The analysis answers:
+
+- Which product categories drive the most revenue, and which have the
+  highest return rates?
 - How has revenue grown year-over-year across categories?
 - Which cities and states contribute the most to total sales?
 - What does payment mode adoption look like across transactions?
@@ -17,109 +29,61 @@ The analysis treats the dataset the way a business analyst or data team would �
 
 ---
 
-## Dataset
+## Data Source
 
-**Data Source:** [Pan-Indian Consumer Transaction Dataset](https://www.kaggle.com/datasets/kumarperiya/pan-indian-consumer-transaction-dataset) — Kaggle
+**Dataset:** [Pan-Indian Consumer Transaction Dataset](https://www.kaggle.com/datasets/kumarperiya/pan-indian-consumer-transaction-dataset) — Kaggle
 
-
-**File:** `Transactions.csv
+**File:** `Transactions.csv`  
 **Rows:** 5,000 transactions  
 **Date Range:** January 2023 – December 2024  
-**Columns:**
+**Unique Customers:** 1,446  
+**Cities Covered:** 8  
+**States Covered:** 7  
 
 | Column | Description |
 |---|---|
 | `Txn ID` | Unique transaction identifier |
 | `Date` | Transaction date |
-| `Customer ID` | Unique customer identifier |
+| `Customer ID` | Anonymised customer identifier |
 | `City` | City of transaction |
 | `State` | State of transaction |
-| `Category` | Product category |
-| `Payment Mode` | UPI / Debit Card / Credit Card / Cash / Net Banking |
-| `Amount (₹)` | Transaction value in INR |
-| `Returned` | 1 if returned, 0 if not |
+| `Category` | Product category (7 categories) |
+| `Payment Mode` | UPI, Debit Card, Credit Card, Net Banking, Cash |
+| `Amount (₹)` | Transaction value in INR (₹70 – ₹42,523) |
+| `Returned` | Binary flag — 1 if returned, 0 if not |
 
-**Categories covered:** Electronics, Apparel, Food & Grocery, Personal Care, Books & Media, Sports, Home & Living  
-**States covered:** Maharashtra, Delhi, Karnataka, Tamil Nadu, Gujarat, West Bengal, Telangana
+**Product Categories:** Personal Care, Apparel, Books & Media,
+Electronics, Sports, Food & Grocery, Home & Living
 
+**Overall Return Rate:** 6.5%
 
 ---
 
-## SQL Analysis — Key Queries
+## Analysis Modules (SQL)
 
-All analysis is in `Consumer_Transaction_Analysis.sql`. Here's what each section covers:
+The SQL script (`Consumer_Transaction_Analysis.sql`) runs eight
+sequential analyses:
 
-### 1. Data Validation
-Checks total transactions, unique customers and cities, invalid amounts, null dates, and the full date range before analysis.
-
-### 2. Monthly Revenue Trend
-Tracks transaction count, total revenue, average transaction value, and active customer count month-by-month, excluding returns.
-
-### 3. Category-wise Performance
-Ranks categories by total revenue, return rate, average order value, and unique buyer count — the core metrics for any product analytics review.
-
-### 4. Payment Mode Adoption
-Uses a CTE to compute each payment mode's share of total transactions and average transaction value — useful for understanding digital payment penetration.
-
-### 5. City-wise Revenue Contribution
-Identifies the top 15 cities by revenue and calculates each city's share of total sales, giving a geographic view of demand concentration.
-
-### 6. Customer Segmentation (RFM Proxy)
-Segments customers using a simplified RFM (Recency, Frequency, Monetary) framework:
-
-| Segment | Criteria |
+| Module | Method |
 |---|---|
-| Champions | Frequency ≥ 10 and Monetary ≥ ₹50,000 |
-| Loyal Customers | Frequency ≥ 5 and Monetary ≥ ₹20,000 |
-| Potential Loyalist | Frequency ≥ 3 |
-| One-Time Buyer | Frequency = 1 |
-| At-Risk | Everything else |
-
-### 7. Year-over-Year Growth
-Compares category-level revenue between 2023 and 2024 using a self-join on a yearly CTE to compute YoY growth percentage.
-
-### 8. Return Rate Analysis
-Cross-tabs category and payment mode to identify which combinations have the highest return rates (filtered to groups with ≥ 10 transactions for statistical reliability).
-
-### 9. Day-of-Week Pattern
-Shows which days of the week see the highest transaction volumes and revenues — useful for promotional planning.
+| Data Validation | Row counts, null checks, date range, invalid amounts |
+| Monthly Revenue Trend | Revenue, transaction count, active customers by month |
+| Category Performance | Revenue, return rate, average order value per category |
+| Payment Mode Adoption | Transaction share % and average value per payment mode |
+| City-wise Contribution | Revenue share by city and state (top 15) |
+| Customer Segmentation | RFM proxy — Champions, Loyal, Potential, At-Risk, One-Time |
+| Year-over-Year Growth | Category-level revenue growth, 2023 vs 2024 |
+| Day-of-Week Pattern | Transaction volume and revenue by day |
 
 ---
 
-## Sample Findings
+## Limitations
 
-- **Electronics** had the highest average order value but also a notable return rate
-- **UPI** was the dominant payment mode by transaction count, consistent with India's digital payment trends
-- **Metro cities** (Mumbai, Delhi, Bengaluru) drove a disproportionate share of total revenue
-- YoY growth varied significantly by category — some segments grew sharply from 2023 to 2024
-- Most customers were **One-Time Buyers**, suggesting a retention opportunity
-
----
-
-## Skills Demonstrated
-
-- MySQL DDL — table creation and data loading
-- Date functions — `DATE_FORMAT`, `YEAR`, `DAYOFWEEK`
-- CTEs and self-joins for time-series comparison
-- Window functions for share calculations
-- RFM-style customer segmentation using `CASE WHEN`
-- `HAVING` clause for minimum sample size filtering
-- Multi-dimensional return rate analysis
-
----
-
-## Files
-
-```
-consumer-transaction-analysis/
-├── Transactions.csv                      # Raw dataset (5,000 rows)
-└── Consumer_Transaction_Analysis.sql    # All SQL queries
-```
-
----
-
-## About
-
-Built as part of my data analytics portfolio while completing my MSc Economics at the Gokhale Institute of Politics and Economics (GIPE), Pune. The goal was to replicate the kind of SQL-based business analysis common in e-commerce, FMCG, and fintech analytics teams.
-
-**Contact:** mohitxdas@gmail.com | [LinkedIn](https://linkedin.com/in/mohit-das911)
+- Dataset covers 8 cities and 7 states — findings are not
+  representative of all-India retail behaviour.
+- RFM segmentation uses a simplified frequency-monetary proxy; a full
+  RFM model would incorporate a recency score relative to analysis date.
+- Return reasons are not captured — return rate analysis identifies
+  where returns are high but cannot explain why.
+- Transaction amounts range up to ₹42,523 but outlier treatment was
+  not applied; high-value transactions may skew average order values.
