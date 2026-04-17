@@ -90,7 +90,3 @@ review.
   salary slips.
 - Loan status is a snapshot — delinquency progression over time (e.g.
   Late → Default transition) is not captured.
-
-
-
-## Risk Score Formula
